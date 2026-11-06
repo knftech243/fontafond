@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fontafond – Studio texte</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;700&amp;family=Caveat:wght@500;700&amp;display=swap">
+<style>
+body{margin:0;background:#0b1a1b}
+a{color:#7fbfff}a:hover{color:#b3d9ff}
+.at-btn{transition:background .15s ease}
+.at-btn:hover{background:#1b3a3b}
+.at-tools{display:flex;flex-direction:column;gap:4px;padding:8px 6px;width:56px;box-sizing:border-box;border-right:1px solid #24494a;background:#102526}
+.at-bar{-webkit-appearance:none;appearance:none;height:12px;border-radius:6px;outline:none;margin:0;width:100%}
+.at-bar::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#ffffff;border:2px solid #0b1a1b;box-shadow:0 0 0 1px #ffffff}
+.at-bar::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#ffffff;border:2px solid #0b1a1b}
+.at-num{background:#0b1a1b;border:1px solid #24494a;border-radius:6px;color:#e8f1f1;font:inherit;font-size:12px;padding:5px 6px;min-width:0;width:100%;box-sizing:border-box}
+@media (max-width:760px){.at-tools{flex-direction:row;width:100%;border-right:0;border-bottom:1px solid #24494a}.at-hide-sm{display:none}}
+</style>
+</helmet>
+<div style="min-height: 1150px; display: flex; flex-direction: column; background: #0b1a1b; color: #e8f1f1; font-family: Inter, system-ui, sans-serif; font-size: 13px;">
+
+  <!-- En-tête -->
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 0 12px; min-height: 44px; background: #102526; border-bottom: 1px solid #24494a;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="width: 28px; height: 28px; border-radius: 8px; background: #CE1021; display: flex; align-items: center; justify-content: center; color: #ffffff; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px;">Aa</div>
+      <span style="font-weight: 600; font-size: 14px;">Fontafond</span>
+    </div>
+    <nav aria-label="Sections" style="display: flex; gap: 2px; background: #0b1a1b; border: 1px solid #24494a; border-radius: 10px; padding: 3px;">
+      <a href="Projets.dc.html" class="at-btn" style="color: #cfdede; text-decoration: none; padding: 6px 12px; border-radius: 7px;">Projets</a>
+      <a href="Main.dc.html" class="at-btn" style="color: #cfdede; text-decoration: none; padding: 6px 12px; border-radius: 7px;">Éditeur</a>
+      <span aria-current="page" style="background: #205A5C; color: #ffffff; padding: 6px 12px; border-radius: 7px;">Studio texte</span>
+    </nav>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto;">
+      <button onClick="{{toggleConvert}}" style="display: flex; align-items: center; gap: 8px; background: #205A5C; border: 0; color: #ffffff; font: inherit; font-weight: 600; padding: 8px 12px; border-radius: 8px; cursor: pointer; min-height: 34px;">
+        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><circle cx="11" cy="11" r="2"></circle></svg>
+        {{convertLabel}}
+      </button>
+      <button class="at-btn" style="background: #17393a; border: 1px solid #24494a; color: #e8f1f1; font: inherit; padding: 8px 12px; border-radius: 8px; cursor: pointer; min-height: 34px;">PNG transparent</button>
+      <button style="display: flex; align-items: center; gap: 8px; background: {{accent}}; border: 0; color: #ffffff; font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 8px; cursor: pointer; min-height: 34px;">
+        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+        SVG vectoriel
+      </button>
+    </div>
+  </header>
+
+  <!-- Barre d'options : mode de texte -->
+  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 6px 12px; min-height: 46px; box-sizing: border-box; background: #132c2d; border-bottom: 1px solid #24494a;">
+    <div role="group" aria-label="Mode de texte" style="display: flex; background: #0b1a1b; border: 1px solid #24494a; border-radius: 8px; padding: 2px;">
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="3">
+        <button aria-pressed="{{m.pressed}}" onClick="{{m.pick}}" style="{{m.style}}">{{m.label}}</button>
+      </sc-for>
+    </div>
+    <sc-if value="{{isPara}}" hint-placeholder-val="{{ false }}">
+      <label style="display: flex; align-items: center; gap: 8px; color: #cfdede;">Largeur du cadre
+        <input type="range" min="40" max="100" value="{{paraWidth}}" onChange="{{setParaWidth}}" style="width: 120px; accent-color: {{accent}};">
+        <span style="color: #e8f1f1; min-width: 40px;">{{paraWidth}} %</span>
+      </label>
+    </sc-if>
+    <sc-if value="{{isPath}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px;">
+        <label style="display: flex; align-items: center; gap: 8px; color: #cfdede;">Tracé
+          <select onChange="{{setShape}}" value="{{shape}}" style="background: #0b1a1b; border: 1px solid #24494a; border-radius: 8px; color: #e8f1f1; font: inherit; padding: 5px 8px;">
+            <option value="circle">Cercle</option>
+            <option value="arc">Arc</option>
+            <option value="wave">Vague (plume)</option>
+          </select>
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; color: #cfdede;">Départ
+          <input type="range" min="0" max="60" value="{{start}}" onChange="{{setStart}}" style="width: 110px; accent-color: {{accent}};">
+          <span style="color: #e8f1f1; min-width: 32px;">{{start}} %</span>
+        </label>
+        <div role="group" aria-label="Côté du tracé" style="display: flex; background: #0b1a1b; border: 1px solid #24494a; border-radius: 8px; padding: 2px;">
+          <sc-for list="{{sides}}" as="sd" hint-placeholder-count="2">
+            <button aria-pressed="{{sd.pressed}}" onClick="{{sd.pick}}" style="{{sd.style}}">{{sd.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{isPoint}}" hint-placeholder-val="{{ true }}">
+      <span class="at-hide-sm" style="color: #9fb8b8;">Cliquez dans le plan de travail et tapez : les retours à la ligne sont manuels.</span>
+    </sc-if>
+  </div>
+
+  <div style="flex-grow: 1; display: flex; flex-wrap: wrap; min-height: 0;">
+
+    <div class="at-tools" role="toolbar" aria-label="Outils">
+      <button aria-label="Sélection (V)" title="Sélection (V)" class="at-btn" style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; cursor: pointer; background: transparent; color: #cfdede;">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>
+      </button>
+      <button aria-label="Texte (T)" title="Texte (T)" style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; cursor: pointer; background: {{accent}}; color: #ffffff;">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"></path><path d="M9 20h6"></path><path d="M12 4v16"></path></svg>
+      </button>
+      <button aria-label="Plume (P)" title="Plume (P) – tracer un chemin pour le texte" class="at-btn" style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; cursor: pointer; background: transparent; color: #cfdede;">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
+      </button>
+      <button aria-label="Ellipse (U)" title="Ellipse (U) – tracé circulaire" class="at-btn" style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; cursor: pointer; background: transparent; color: #cfdede;">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"></circle></svg>
+      </button>
+      <button aria-label="Pipette (I)" title="Pipette (I)" onClick="{{eyedrop}}" class="at-btn" style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; cursor: pointer; background: transparent; color: #cfdede;">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22l1-1h3l9-9"></path><path d="M3 21v-3l9-9"></path><path d="M15 6l3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4z"></path></svg>
+      </button>
+      <span aria-hidden="true" style="height: 1px; width: 32px; margin: 4px auto; background: #24494a; flex-shrink: 0;"></span>
+      <!-- Premier plan / arrière-plan, comme dans les logiciels de création -->
+      <div style="position: relative; width: 44px; height: 52px; flex-shrink: 0;">
+        <button aria-label="Couleur d'arrière-plan (contour)" onClick="{{targetStroke}}" style="position: absolute; right: 0; bottom: 8px; width: 26px; height: 26px; border-radius: 4px; border: 2px solid #e8f1f1; background: {{bgHex}}; cursor: pointer; padding: 0;"></button>
+        <button aria-label="Couleur de premier plan (texte)" onClick="{{targetFill}}" style="position: absolute; left: 0; top: 0; width: 26px; height: 26px; border-radius: 4px; border: 2px solid #e8f1f1; background: {{fgHex}}; cursor: pointer; padding: 0; box-shadow: 0 0 0 1px #0b1a1b;"></button>
+        <button aria-label="Inverser les couleurs (X)" title="Inverser (X)" onClick="{{swapColors}}" style="position: absolute; right: -2px; top: -2px; width: 18px; height: 18px; border: 0; background: transparent; color: #cfdede; cursor: pointer; padding: 0; font-size: 12px;">⇄</button>
+        <button aria-label="Couleurs par défaut noir et blanc (D)" title="Par défaut (D)" onClick="{{resetColors}}" style="position: absolute; left: 0; bottom: 0; width: 14px; height: 14px; border: 1px solid #e8f1f1; background: linear-gradient(135deg, #000000 50%, #ffffff 50%); cursor: pointer; padding: 0; border-radius: 2px;"></button>
+      </div>
+    </div>
+
+    <!-- Plan de travail -->
+    <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 12px; justify-content: center; padding: 32px 24px; box-sizing: border-box; background: #081415;">
+      <sc-if value="{{converted}}" hint-placeholder-val="{{ false }}">
+        <div role="status" style="width: 100%; max-width: 860px; margin: 0 auto; box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; background: #2a2706; border: 1px solid #8a7a12; border-radius: 10px; color: #f5eeb8;">
+          <strong style="color: #F7D618;">Converti en contours vectoriels</strong>
+          <span>— 42 formes, 1 318 points, modifiables à la Plume (P) et à la Sélection (V). Le texte n'est plus modifiable au clavier.</span>
+          <button onClick="{{toggleConvert}}" style="margin-left: auto; background: transparent; border: 1px solid #8a7a12; color: #f5eeb8; font: inherit; padding: 6px 10px; border-radius: 6px; cursor: pointer;">Annuler la conversion</button>
+        </div>
+      </sc-if>
+
+      <div style="width: 100%; max-width: 860px; margin: 0 auto; min-height: 460px; box-sizing: border-box; background: #fbfbfd; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); padding: 40px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; outline: {{convertedOutline}}; outline-offset: -8px;">
+
+        <sc-if value="{{isPoint}}" hint-placeholder-val="{{ true }}">
+          <div style="text-align: {{pointAlign}};">
+            <div style="{{textStyle}} white-space: pre-wrap; display: inline-block; transform: {{transform}}; transform-origin: {{origin}};">{{text}}</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isPara}}" hint-placeholder-val="{{ false }}">
+          <div style="position: relative; width: {{paraWidth}}%; margin: 0 auto; box-sizing: border-box; border: 1px dashed {{accent}}; padding: 12px; transform: {{transform}}; transform-origin: top center;">
+            <span aria-hidden="true" style="position: absolute; left: -5px; top: -5px; width: 8px; height: 8px; background: #ffffff; border: 1px solid {{accent}};"></span>
+            <span aria-hidden="true" style="position: absolute; right: -5px; top: -5px; width: 8px; height: 8px; background: #ffffff; border: 1px solid {{accent}};"></span>
+            <span aria-hidden="true" style="position: absolute; left: -5px; bottom: -5px; width: 8px; height: 8px; background: #ffffff; border: 1px solid {{accent}};"></span>
+            <span aria-hidden="true" style="position: absolute; right: -5px; bottom: -5px; width: 8px; height: 8px; background: #ffffff; border: 1px solid {{accent}};"></span>
+            <sc-for list="{{paragraphs}}" as="p" hint-placeholder-count="2">
+              <p style="{{p.style}}">{{p.text}}</p>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isPath}}" hint-placeholder-val="{{ false }}">
+          <svg role="img" aria-label="Aperçu du texte sur tracé" viewBox="0 0 800 520" style="display: block; width: 100%; height: auto;">
+            <defs>
+              <linearGradient id="st-lin" gradientTransform="rotate({{angle}} 0.5 0.5)">
+                <stop offset="0" stop-color="{{g1Rgba}}"></stop>
+                <stop offset="1" stop-color="{{g2Rgba}}"></stop>
+              </linearGradient>
+              <radialGradient id="st-rad">
+                <stop offset="0" stop-color="{{g1Rgba}}"></stop>
+                <stop offset="1" stop-color="{{g2Rgba}}"></stop>
+              </radialGradient>
+              <pattern id="st-pat" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <rect x="0" y="0" width="8" height="16" fill="{{g1Rgba}}"></rect>
+                <rect x="8" y="0" width="8" height="16" fill="{{g2Rgba}}"></rect>
+              </pattern>
+              <path id="st-path" d="{{pathD}}"></path>
+            </defs>
+            <path d="{{pathD}}" fill="none" stroke="{{accent}}" stroke-width="1.5" stroke-dasharray="6 6"></path>
+            <text font-family="Caveat, cursive" font-weight="{{svgWeight}}" font-size="{{pathSize}}" letter-spacing="{{svgTracking}}" fill="{{svgFill}}" stroke="{{svgStroke}}" stroke-width="{{svgStrokeW}}" stroke-opacity="{{strokeOpacity}}" paint-order="{{svgPaintOrder}}" dominant-baseline="{{baseline}}" style="text-transform: {{textTransform}}; font-variant: {{fontVariant}}; text-decoration: {{decoration}};">
+              <textPath href="#st-path" startOffset="{{start}}%">{{pathText}}</textPath>
+            </text>
+          </svg>
+        </sc-if>
+      </div>
+      <p style="margin: 0 auto; max-width: 860px; width: 100%; color: #9fb8b8; font-size: 12px;">Aperçu avec une police manuscrite de démonstration ; dans l'outil, c'est votre police. L'export SVG contient des chemins vectoriels (pas besoin d'installer la police), avec contour et dégradé.</p>
+      <sc-if value="{{eyeMsg}}" hint-placeholder-val="{{ false }}">
+        <p role="status" style="margin: 0 auto; max-width: 860px; width: 100%; color: #F7D618; font-size: 12px;">{{eyeMsg}}</p>
+      </sc-if>
+    </main>
+
+    <!-- Panneaux -->
+    <aside aria-label="Panneaux" style="flex: 1 1 340px; max-width: 100%; box-sizing: border-box; background: #132c2d; border-left: 1px solid #24494a; display: flex; flex-direction: column;">
+
+      <div role="tablist" aria-label="Panneaux de texte" style="display: flex; gap: 2px; padding: 8px 10px 0; border-bottom: 1px solid #24494a;">
+        <sc-for list="{{tabs}}" as="tb" hint-placeholder-count="3">
+          <button role="tab" aria-selected="{{tb.selected}}" onClick="{{tb.pick}}" style="{{tb.style}}">{{tb.label}}</button>
+        </sc-for>
+      </div>
+
+      <!-- Caractère -->
+      <sc-if value="{{tabCar}}" hint-placeholder-val="{{ true }}">
+        <div style="padding: 14px; display: flex; flex-direction: column; gap: 12px;">
+          <label style="display: flex; flex-direction: column; gap: 6px; color: #9fb8b8; font-size: 12px;">Votre texte
+            <textarea rows="3" value="{{text}}" onChange="{{setText}}" disabled="{{converted}}" style="resize: vertical; background: #0b1a1b; border: 1px solid #24494a; border-radius: 8px; color: #e8f1f1; font: inherit; font-size: 13px; padding: 8px 10px;"></textarea>
+          </label>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+            <label style="display: flex; flex-direction: column; gap: 6px; color: #9fb8b8; font-size: 12px;">Police
+              <select style="background: #0b1a1b; border: 1px solid #24494a; border-radius: 8px; color: #e8f1f1; font: inherit; font-size: 13px; padding: 7px 8px; min-width: 0;">
+                <option>Ma Police Manuscrite</option>
+                <option>MaSerif Lushi (importée)</option>
+              </select>
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 6px; color: #9fb8b8; font-size: 12px;">Crénage
+              <select style="background: #0b1a1b; border: 1px solid #24494a; border-radius: 8px; color: #e8f1f1; font: inherit; font-size: 13px; padding: 7px 8px; min-width: 0;">
+                <option>Métrique</option>
+                <option>0 (aucun)</option>
+                <option>Manuel</option>
+              </select>
+            </label>
+          </div>
+          <sc-for list="{{charFields}}" as="f" hint-placeholder-count="6">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+                <span style="color: #cfdede;"><span style="display: inline-block; min-width: 26px; color: #9fb8b8; font-weight: 600;">{{f.abbr}}</span>{{f.label}}</span>
+                <span style="color: #e8f1f1; font-variant-numeric: tabular-nums;">{{f.display}}</span>
+              </div>
+              <input type="range" aria-label="{{f.label}}" min="{{f.min}}" max="{{f.max}}" step="{{f.step}}" value="{{f.value}}" onChange="{{f.onChange}}" style="width: 100%; accent-color: {{accent}};">
+            </div>
+          </sc-for>
+          <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px;">
+            <sc-for list="{{toggles}}" as="t" hint-placeholder-count="6">
+              <button aria-label="{{t.label}}" title="{{t.label}}" aria-pressed="{{t.pressed}}" onClick="{{t.toggle}}" style="{{t.style}}"><span style="{{t.glyphStyle}}">{{t.glyph}}</span></button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- Paragraphe -->
+      <sc-if value="{{tabPara}}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 14px; display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px;">
+            <sc-for list="{{aligns}}" as="al" hint-placeholder-count="7">
+              <button aria-label="{{al.label}}" title="{{al.label}}" aria-pressed="{{al.pressed}}" onClick="{{al.pick}}" style="{{al.style}}">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="{{al.d}}"></path></svg>
+              </button>
+            </sc-for>
+          </div>
+          <sc-if value="{{justifyInPoint}}" hint-placeholder-val="{{ false }}">
+            <p style="margin: 0; color: #F7D618; font-size: 12px;">La justification s'applique au texte de paragraphe (cadre).</p>
+          </sc-if>
+          <sc-for list="{{paraFields}}" as="f" hint-placeholder-count="5">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+                <span style="color: #cfdede;">{{f.label}}</span>
+                <span style="color: #e8f1f1; font-variant-numeric: tabular-nums;">{{f.display}}</span>
+              </div>
+              <input type="range" aria-label="{{f.label}}" min="{{f.min}}" max="{{f.max}}" step="{{f.step}}" value="{{f.value}}" onChange="{{f.onChange}}" style="width: 100%; accent-color: {{accent}};">
+            </div>
+          </sc-for>
+          <label style="display: flex; align-items: center; gap: 8px; color: #9fb8b8; font-size: 12px;"><input type="checkbox" disabled> Césure automatique (prévue en V2)</label>
+        </div>
+      </sc-if>
+
+      <!-- Style : contour + incrustation -->
+      <sc-if value="{{tabStyle}}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 14px; display: flex; flex-direction: column; gap: 14px;">
+          <section style="display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #102526; border: 1px solid #24494a; border-radius: 10px;">
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: 600;"><input type="checkbox" checked="{{strokeOn}}" onChange="{{toggleStroke}}" style="accent-color: {{accent}};"> Contour</label>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+              <label style="display: flex; flex-direction: column; gap: 4px; color: #9fb8b8; font-size: 12px;">Épaisseur · {{strokeW}} px
+                <input type="range" min="1" max="20" value="{{strokeW}}" onChange="{{setStrokeW}}" style="accent-color: {{accent}};">
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 4px; color: #9fb8b8; font-size: 12px;">Opacité · {{strokeOpPct}} %
+                <input type="range" min="0" max="100" value="{{strokeOpPct}}" onChange="{{setStrokeOp}}" style="accent-color: {{accent}};">
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 4px; color: #9fb8b8; font-size: 12px;">Position
+                <select value="{{strokePos}}" onChange="{{setStrokePos}}" style="background: #0b1a1b; border: 1px solid #24494a; border-radius: 8px; color: #e8f1f1; font: inherit; padding: 6px 8px;">
+                  <option value="outside">Extérieur</option>
+                  <option value="center">Centre</option>
+                  <option value="inside">Intérieur</option>
+                </select>
+              </label>
+              <div style="display: flex; flex-direction: column; gap: 4px; color: #9fb8b8; font-size: 12px;">Couleur
+                <button aria-label="Modifier la couleur du contour" onClick="{{targetStroke}}" style="height: 32px; border-radius: 8px; border: 2px solid {{strokeRing}}; background: {{bgHex}}; cursor: pointer;"></button>
+              </div>
+            </div>
+          </section>
+
+          <section style="display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #102526; border: 1px solid #24494a; border-radius: 10px;">
+            <span style="font-weight: 600;">Remplissage (incrustation)</span>
+            <div role="group" aria-label="Type de remplissage" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;">
+              <sc-for list="{{fillTypes}}" as="ft" hint-placeholder-count="4">
+                <button aria-pressed="{{ft.pressed}}" onClick="{{ft.pick}}" style="{{ft.style}}">{{ft.label}}</button>
+              </sc-for>
+            </div>
+            <sc-if value="{{hasGradient}}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="position: relative; height: 22px; border-radius: 6px; border: 1px solid #24494a; background: {{gradBar}};">
+                  <button aria-label="Arrêt de couleur de début" onClick="{{targetG1}}" style="position: absolute; left: -8px; top: 14px; width: 16px; height: 16px; border-radius: 3px; border: 2px solid {{g1Ring}}; background: {{g1Hex}}; cursor: pointer; padding: 0;"></button>
+                  <button aria-label="Arrêt de couleur de fin" onClick="{{targetG2}}" style="position: absolute; right: -8px; top: 14px; width: 16px; height: 16px; border-radius: 3px; border: 2px solid {{g2Ring}}; background: {{g2Hex}}; cursor: pointer; padding: 0;"></button>
+                </div>
+                <label style="display: flex; align-items: center; gap: 8px; color: #9fb8b8; font-size: 12px; margin-top: 10px;">Angle
+                  <input type="range" min="0" max="360" value="{{angle}}" onChange="{{setAngle}}" style="flex-grow: 1; accent-color: {{accent}};">
+                  <span style="color: #e8f1f1; min-width: 36px; text-align: right;">{{angle}}°</span>
+                </label>
+                <sc-if value="{{isPattern}}" hint-placeholder-val="{{ false }}">
+                  <label style="display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; background: #17393a; border: 1px solid #24494a; color: #e8f1f1; padding: 7px 10px; border-radius: 8px; cursor: pointer;">Importer une texture (image)
+                    <input type="file" accept="image/*" style="position: absolute; width: 1px; height: 1px; opacity: 0;">
+                  </label>
+                </sc-if>
+              </div>
+            </sc-if>
+          </section>
+        </div>
+      </sc-if>
+
+      <!-- Panneau Couleur : sélecteur standard -->
+      <section aria-labelledby="couleur-titre" style="margin-top: auto; border-top: 1px solid #24494a; padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h2 id="couleur-titre" style="margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9fb8b8;">Couleur</h2>
+          <button aria-label="Pipette" title="Pipette (I)" onClick="{{eyedrop}}" class="at-btn" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 1px solid #24494a; background: transparent; color: #cfdede; border-radius: 6px; cursor: pointer;">
+            <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22l1-1h3l9-9"></path><path d="M3 21v-3l9-9"></path><path d="M15 6l3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4z"></path></svg>
+          </button>
+        </div>
+        <div role="group" aria-label="Couleur modifiée" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;">
+          <sc-for list="{{targets}}" as="tg" hint-placeholder-count="4">
+            <button aria-pressed="{{tg.pressed}}" onClick="{{tg.pick}}" style="{{tg.style}}"><span aria-hidden="true" style="{{tg.dot}}"></span>{{tg.label}}</button>
+          </sc-for>
+        </div>
+        <button aria-label="Saturation et luminosité" onPointerDown="{{svDown}}" onPointerMove="{{svMove}}" style="position: relative; display: block; width: 100%; height: 150px; border: 1px solid #24494a; border-radius: 8px; padding: 0; cursor: crosshair; touch-action: none; background: linear-gradient(to top, #000000, rgba(0,0,0,0)), linear-gradient(to right, #ffffff, {{hueColor}});">
+          <span aria-hidden="true" style="position: absolute; left: {{svLeft}}%; top: {{svTop}}%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; border: 2px solid #ffffff; box-shadow: 0 0 0 1px #0b1a1b; pointer-events: none;"></span>
+        </button>
+        <label style="display: flex; align-items: center; gap: 8px; color: #9fb8b8; font-size: 12px;"><span style="min-width: 52px;">Teinte</span>
+          <input class="at-bar" type="range" min="0" max="359" value="{{h}}" onChange="{{setHue}}" style="background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);">
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; color: #9fb8b8; font-size: 12px;"><span style="min-width: 52px;">Opacité</span>
+          <input class="at-bar" type="range" min="0" max="100" value="{{a}}" onChange="{{setAlpha}}" style="background: linear-gradient(to right, rgba(0,0,0,0), {{curHex}}), repeating-conic-gradient(#cfdede 0% 25%, #ffffff 0% 50%) 0 0 / 10px 10px;">
+        </label>
+        <div style="display: grid; grid-template-columns: 1.6fr repeat(3, minmax(0, 1fr)); gap: 6px; align-items: end;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span aria-hidden="true" style="width: 28px; height: 28px; flex-shrink: 0; border-radius: 6px; border: 1px solid #24494a; background: {{curRgba}};"></span>
+            <label style="display: flex; flex-direction: column; gap: 3px; color: #9fb8b8; font-size: 11px; min-width: 0;">HEX
+              <input class="at-num" type="text" value="{{hexField}}" onChange="{{setHex}}" onBlur="{{blurHex}}" maxlength="7">
+            </label>
+          </div>
+          <sc-for list="{{rgbFields}}" as="r" hint-placeholder-count="3">
+            <label style="display: flex; flex-direction: column; gap: 3px; color: #9fb8b8; font-size: 11px;">{{r.label}}
+              <input class="at-num" type="number" min="0" max="255" value="{{r.value}}" onChange="{{r.onChange}}">
+            </label>
+          </sc-for>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.6fr repeat(3, minmax(0, 1fr)); gap: 6px; align-items: end;">
+          <label style="display: flex; flex-direction: column; gap: 3px; color: #9fb8b8; font-size: 11px;">Opacité %
+            <input class="at-num" type="number" min="0" max="100" value="{{a}}" onChange="{{setAlpha}}">
+          </label>
+          <sc-for list="{{hsvFields}}" as="r" hint-placeholder-count="3">
+            <label style="display: flex; flex-direction: column; gap: 3px; color: #9fb8b8; font-size: 11px;">{{r.label}}
+              <input class="at-num" type="number" min="0" max="{{r.max}}" value="{{r.value}}" onChange="{{r.onChange}}">
+            </label>
+          </sc-for>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; color: #9fb8b8; font-size: 12px;">
+            <span>Nuancier</span>
+            <button onClick="{{saveSwatch}}" class="at-btn" style="background: transparent; border: 1px solid #24494a; color: #cfdede; font: inherit; font-size: 12px; padding: 4px 8px; border-radius: 6px; cursor: pointer;">+ Enregistrer</button>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <sc-for list="{{swatches}}" as="sw" hint-placeholder-count="6">
+              <button aria-label="Nuance {{sw.hex}}" title="{{sw.hex}}" onClick="{{sw.pick}}" style="width: 24px; height: 24px; border-radius: 5px; border: 1px solid #3a6a6b; background: {{sw.hex}}; cursor: pointer; padding: 0;"></button>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <footer style="display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 6px 14px; min-height: 30px; box-sizing: border-box; background: #102526; border-top: 1px solid #24494a; color: #9fb8b8; font-size: 12px;">
+    <span>Mode : {{modeName}}</span>
+    <span>{{charCount}} caractères</span>
+    <span style="display: flex; align-items: center; gap: 6px;"><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: #F7D618;"></span>Enregistré sur cet appareil</span>
+    <span style="margin-left: auto;">X : inverser les couleurs · D : noir et blanc · I : pipette</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0068D6","options":["#0068D6","#205A5C","#CE1021"]},"$preview":{"width":1440,"height":1150}}'>
+function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
+function hsvToRgb(h, s, v) {
+  s = s / 100; v = v / 100;
+  var c = v * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = v - c, r, g, b;
+  if (h < 60) { r = c; g = x; b = 0; } else if (h < 120) { r = x; g = c; b = 0; }
+  else if (h < 180) { r = 0; g = c; b = x; } else if (h < 240) { r = 0; g = x; b = c; }
+  else if (h < 300) { r = x; g = 0; b = c; } else { r = c; g = 0; b = x; }
+  return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+}
+function rgbToHsv(r, g, b) {
+  r = r / 255; g = g / 255; b = b / 255;
+  var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn, h = 0;
+  if (d) {
+    if (mx === r) h = 60 * (((g - b) / d) % 6);
+    else if (mx === g) h = 60 * ((b - r) / d + 2);
+    else h = 60 * ((r - g) / d + 4);
+  }
+  if (h < 0) h += 360;
+  return { h: Math.round(h) % 360, s: Math.round(mx ? d / mx * 100 : 0), v: Math.round(mx * 100) };
+}
+function toHex(rgb) { return '#' + rgb.map(function (n) { return ('0' + n.toString(16)).slice(-2); }).join('').toUpperCase(); }
+function fromHex(hex) {
+  var m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  var n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function hsvFromHex(hex, a) { var rgb = fromHex(hex); var o = rgbToHsv(rgb[0], rgb[1], rgb[2]); o.a = a == null ? 100 : a; return o; }
+function colHex(c) { return toHex(hsvToRgb(c.h, c.s, c.v)); }
+function colRgba(c) { var r = hsvToRgb(c.h, c.s, c.v); return 'rgba(' + r[0] + ', ' + r[1] + ', ' + r[2] + ', ' + (c.a / 100) + ')'; }
+
+var DEFAULTS = {
+  text: 'Bonjour Lubumbashi\nMa police, mon style : simple, lisible et unique, pour mes visuels TikTok et mes logos.',
+  size: 64, leading: 74, tracking: 0, scaleV: 100, scaleH: 100, shift: 0,
+  bold: true, italic: false, caps: false, smallcaps: false, underline: false, strike: false,
+  align: 'left', indentL: 0, indentR: 0, indentFirst: 0, spaceBefore: 0, spaceAfter: 14,
+  mode: 'para', paraWidth: 86, shape: 'circle', start: 4, side: 'over',
+  strokeOn: true, strokeW: 3, strokeOp: 100, strokePos: 'outside',
+  fillType: 'linear', angle: 90,
+  tab: 'style', target: 'g1', converted: false, hexDraft: null, eyeMsg: '',
+  saved: [],
+  colors: {
+    fill: hsvFromHex('#0B1A1B'), stroke: hsvFromHex('#0B1A1B'),
+    g1: hsvFromHex('#205A5C'), g2: hsvFromHex('#007FFF')
+  }
+};
+var PALETTE = ['#CE1021', '#205A5C', '#007FFF', '#F7D618', '#0B1A1B', '#FFFFFF'];
+var PATHS = {
+  circle: 'M230,270 A170,170 0 1,1 570,270 A170,170 0 1,1 230,270',
+  arc: 'M90,400 Q400,40 710,400',
+  wave: 'M50,300 C180,120 300,480 420,300 S650,120 760,300'
+};
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = JSON.parse(JSON.stringify(DEFAULTS));
+  }
+  setColor(target, patch) {
+    this.setState(function (st) {
+      var c = Object.assign({}, st.colors);
+      c[target] = Object.assign({}, c[target], patch);
+      return { colors: c, hexDraft: null };
+    });
+  }
+  renderVals() {
+    var s = this.state;
+    var self = this;
+    var accent = this.props.accent ?? '#0068D6';
+    function num(key) { return function (e) { var o = {}; o[key] = Number(e.target.value); self.setState(o); }; }
+    function flip(key) { return function () { var o = {}; o[key] = !self.state[key]; self.setState(o); }; }
+    function seg(on) {
+      return 'border: 0; border-radius: 6px; cursor: pointer; font: inherit; font-size: 12px; padding: 6px 10px; min-height: 30px; background: ' +
+        (on ? accent : 'transparent') + '; color: ' + (on ? '#ffffff' : '#cfdede') + ';';
+    }
+    function tile(on) {
+      return 'height: 34px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 12px; padding: 0 4px; ' +
+        (on ? 'background: ' + accent + '; color: #ffffff; border: 1px solid ' + accent + ';' : 'background: #0b1a1b; color: #e8f1f1; border: 1px solid #24494a;');
+    }
+
+    var C = s.colors;
+    var cur = C[s.target];
+    var curRgb = hsvToRgb(cur.h, cur.s, cur.v);
+    var curHex = toHex(curRgb);
+
+    // ---- Couleur : sélecteur standard
+    function pickSV(e) {
+      var r = e.currentTarget.getBoundingClientRect();
+      var sat = clamp(Math.round((e.clientX - r.left) / r.width * 100), 0, 100);
+      var val = clamp(Math.round(100 - (e.clientY - r.top) / r.height * 100), 0, 100);
+      self.setColor(self.state.target, { s: sat, v: val });
+    }
+    function applyHex(hex) {
+      var rgb = fromHex(hex);
+      if (!rgb) return false;
+      var hsv = rgbToHsv(rgb[0], rgb[1], rgb[2]);
+      self.setColor(self.state.target, hsv);
+      return true;
+    }
+    var targetDefs = [
+      { id: 'fill', label: 'Texte' }, { id: 'stroke', label: 'Contour' },
+      { id: 'g1', label: 'Dégr. 1' }, { id: 'g2', label: 'Dégr. 2' }
+    ];
+    var targets = targetDefs.map(function (t) {
+      var on = s.target === t.id;
+      return {
+        label: t.label, pressed: on ? 'true' : 'false',
+        pick: function () { self.setState({ target: t.id, hexDraft: null }); },
+        style: 'display: flex; align-items: center; justify-content: center; gap: 5px; border-radius: 6px; cursor: pointer; font: inherit; font-size: 11px; padding: 5px 2px; min-height: 30px; ' +
+          (on ? 'background: #205A5C; color: #ffffff; border: 1px solid #2f8285;' : 'background: #0b1a1b; color: #cfdede; border: 1px solid #24494a;'),
+        dot: 'width: 9px; height: 9px; border-radius: 50%; border: 1px solid #9fb8b8; background: ' + colHex(C[t.id]) + ';'
+      };
+    });
+    var rgbFields = ['R', 'V', 'B'].map(function (lab, i) {
+      return {
+        label: lab, value: curRgb[i],
+        onChange: function (e) {
+          var rgb = curRgb.slice(); rgb[i] = clamp(Number(e.target.value) || 0, 0, 255);
+          self.setColor(self.state.target, rgbToHsv(rgb[0], rgb[1], rgb[2]));
+        }
+      };
+    });
+    var hsvFields = [{ k: 'h', label: 'T °', max: 359 }, { k: 's', label: 'S %', max: 100 }, { k: 'v', label: 'V %', max: 100 }].map(function (f) {
+      return {
+        label: f.label, max: f.max, value: cur[f.k],
+        onChange: function (e) { var o = {}; o[f.k] = clamp(Number(e.target.value) || 0, 0, f.max); self.setColor(self.state.target, o); }
+      };
+    });
+    var swatches = PALETTE.concat(s.saved).map(function (hex) { return { hex: hex, pick: function () { applyHex(hex); } }; });
+
+    // ---- Caractère
+    var charFields = [
+      { abbr: 'T', label: 'Taille', key: 'size', min: 12, max: 160, step: 1, unit: ' px' },
+      { abbr: 'A↕', label: 'Interlignage', key: 'leading', min: 16, max: 220, step: 1, unit: ' px' },
+      { abbr: 'VA', label: 'Approche', key: 'tracking', min: -200, max: 800, step: 10, unit: '' },
+      { abbr: 'IT', label: 'Échelle verticale', key: 'scaleV', min: 50, max: 200, step: 1, unit: ' %' },
+      { abbr: 'T↔', label: 'Échelle horizontale', key: 'scaleH', min: 50, max: 200, step: 1, unit: ' %' },
+      { abbr: 'Aª', label: 'Décalage de la ligne de base', key: 'shift', min: -60, max: 60, step: 1, unit: ' px' }
+    ].map(function (f) {
+      return { abbr: f.abbr, label: f.label, min: f.min, max: f.max, step: f.step, value: s[f.key], display: s[f.key] + f.unit, onChange: num(f.key) };
+    });
+    var toggles = [
+      { key: 'bold', label: 'Faux gras', glyph: 'T', glyphStyle: 'font-weight: 800;' },
+      { key: 'italic', label: 'Faux italique', glyph: 'T', glyphStyle: 'font-style: italic; font-family: Georgia, serif;' },
+      { key: 'caps', label: 'Tout en majuscules', glyph: 'TT', glyphStyle: 'font-weight: 600;' },
+      { key: 'smallcaps', label: 'Petites capitales', glyph: 'Tᴛ', glyphStyle: 'font-weight: 600;' },
+      { key: 'underline', label: 'Souligné', glyph: 'T', glyphStyle: 'text-decoration: underline; text-underline-offset: 3px;' },
+      { key: 'strike', label: 'Barré', glyph: 'T', glyphStyle: 'text-decoration: line-through;' }
+    ].map(function (t) {
+      return { label: t.label, glyph: t.glyph, glyphStyle: t.glyphStyle, pressed: s[t.key] ? 'true' : 'false', toggle: flip(t.key), style: tile(s[t.key]) + ' font-size: 15px;' };
+    });
+
+    // ---- Paragraphe
+    var alignDefs = [
+      { id: 'left', label: 'Aligner à gauche', d: 'M3 6h18M3 10h12M3 14h18M3 18h10' },
+      { id: 'center', label: 'Centrer', d: 'M3 6h18M7 10h10M3 14h18M8 18h8' },
+      { id: 'right', label: 'Aligner à droite', d: 'M3 6h18M9 10h12M3 14h18M11 18h10' },
+      { id: 'jleft', label: 'Justifier, dernière ligne à gauche', d: 'M3 6h18M3 10h18M3 14h18M3 18h9' },
+      { id: 'jcenter', label: 'Justifier, dernière ligne centrée', d: 'M3 6h18M3 10h18M3 14h18M7 18h10' },
+      { id: 'jright', label: 'Justifier, dernière ligne à droite', d: 'M3 6h18M3 10h18M3 14h18M12 18h9' },
+      { id: 'jall', label: 'Tout justifier', d: 'M3 6h18M3 10h18M3 14h18M3 18h18' }
+    ];
+    var aligns = alignDefs.map(function (a) {
+      var on = s.align === a.id;
+      return {
+        label: a.label, d: a.d, pressed: on ? 'true' : 'false',
+        pick: function () { self.setState({ align: a.id }); },
+        style: 'height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; padding: 0; ' +
+          (on ? 'background: ' + accent + '; color: #ffffff; border: 1px solid ' + accent + ';' : 'background: #0b1a1b; color: #cfdede; border: 1px solid #24494a;')
+      };
+    });
+    var paraFields = [
+      { label: 'Retrait gauche', key: 'indentL', min: 0, max: 120 },
+      { label: 'Retrait droit', key: 'indentR', min: 0, max: 120 },
+      { label: 'Retrait de première ligne', key: 'indentFirst', min: -60, max: 120 },
+      { label: 'Espace avant le paragraphe', key: 'spaceBefore', min: 0, max: 60 },
+      { label: 'Espace après le paragraphe', key: 'spaceAfter', min: 0, max: 60 }
+    ].map(function (f) {
+      return { label: f.label, min: f.min, max: f.max, step: 1, value: s[f.key], display: s[f.key] + ' px', onChange: num(f.key) };
+    });
+    var textAlign = { left: 'left', center: 'center', right: 'right', jleft: 'justify', jcenter: 'justify', jright: 'justify', jall: 'justify' }[s.align];
+    var alignLast = { jleft: 'left', jcenter: 'center', jright: 'right', jall: 'justify' }[s.align] || 'auto';
+    var pointAlign = textAlign === 'justify' ? 'left' : textAlign;
+
+    // ---- Remplissage + contour (HTML)
+    var g1 = colRgba(C.g1), g2 = colRgba(C.g2);
+    var gradCss = s.fillType === 'radial' ? 'radial-gradient(circle, ' + g1 + ', ' + g2 + ')'
+      : s.fillType === 'pattern' ? 'repeating-linear-gradient(' + s.angle + 'deg, ' + g1 + ' 0 8px, ' + g2 + ' 8px 16px)'
+      : 'linear-gradient(' + s.angle + 'deg, ' + g1 + ', ' + g2 + ')';
+    var fillCss = s.fillType === 'color' ? 'color: ' + colRgba(C.fill) + ';'
+      : 'color: transparent; background: ' + gradCss + '; -webkit-background-clip: text; background-clip: text;';
+    var strokeColor = colRgba(Object.assign({}, C.stroke, { a: C.stroke.a * s.strokeOp / 100 }));
+    var strokeW = s.strokePos === 'outside' ? s.strokeW * 2 : s.strokeW;
+    var strokeCss = s.strokeOn ? '-webkit-text-stroke: ' + strokeW + 'px ' + strokeColor + '; paint-order: ' + (s.strokePos === 'outside' ? 'stroke fill' : 'normal') + ';' : '';
+    var decos = [];
+    if (s.underline) decos.push('underline');
+    if (s.strike) decos.push('line-through');
+    var decoration = decos.length ? decos.join(' ') : 'none';
+    var textTransform = s.caps ? 'uppercase' : 'none';
+    var fontVariant = s.smallcaps ? 'small-caps' : 'normal';
+    var textStyle = "font-family: Caveat, cursive; font-weight: " + (s.bold ? 700 : 500) + "; font-size: " + s.size + "px; line-height: " + s.leading + "px; letter-spacing: " + (s.tracking / 1000) +
+      "em; position: relative; top: " + (-s.shift) + "px; text-transform: " + textTransform + "; font-variant: " + fontVariant + "; text-decoration: " + decoration + "; text-decoration-color: " + colRgba(C.fill) + "; " + fillCss + " " + strokeCss;
+    var transform = 'scale(' + (s.scaleH / 100) + ', ' + (s.scaleV / 100) + ')' + (s.italic ? ' skewX(-12deg)' : '');
+    var paragraphs = s.text.split('\n').map(function (t) {
+      return {
+        text: t,
+        style: textStyle + ' margin: ' + s.spaceBefore + 'px ' + s.indentR + 'px ' + s.spaceAfter + 'px ' + s.indentL + 'px; text-indent: ' + s.indentFirst + 'px; text-align: ' + textAlign + '; text-align-last: ' + alignLast + '; overflow-wrap: anywhere;'
+      };
+    });
+
+    // ---- Texte sur tracé (SVG)
+    var svgFill = s.fillType === 'color' ? colRgba(C.fill) : s.fillType === 'radial' ? 'url(#st-rad)' : s.fillType === 'pattern' ? 'url(#st-pat)' : 'url(#st-lin)';
+
+    // ---- Onglets, modes, types de remplissage
+    var tabs = [{ id: 'car', label: 'Caractère' }, { id: 'para', label: 'Paragraphe' }, { id: 'style', label: 'Style' }].map(function (t) {
+      var on = s.tab === t.id;
+      return {
+        label: t.label, selected: on ? 'true' : 'false',
+        pick: function () { self.setState({ tab: t.id }); },
+        style: 'background: transparent; border: 0; border-bottom: 2px solid ' + (on ? '#007FFF' : 'transparent') + '; color: ' + (on ? '#ffffff' : '#9fb8b8') + '; font: inherit; font-weight: ' + (on ? 600 : 400) + '; padding: 8px 10px; cursor: pointer;'
+      };
+    });
+    var modeNames = { point: 'Texte de point', para: 'Texte de paragraphe', path: 'Texte sur tracé' };
+    var modes = ['point', 'para', 'path'].map(function (m) {
+      return { label: modeNames[m], pressed: s.mode === m ? 'true' : 'false', pick: function () { self.setState({ mode: m }); }, style: seg(s.mode === m) };
+    });
+    var sides = [{ id: 'over', label: 'Dessus' }, { id: 'under', label: 'Dessous' }].map(function (d) {
+      return { label: d.label, pressed: s.side === d.id ? 'true' : 'false', pick: function () { self.setState({ side: d.id }); }, style: seg(s.side === d.id) };
+    });
+    var fillTypes = [{ id: 'color', label: 'Couleur' }, { id: 'linear', label: 'Linéaire' }, { id: 'radial', label: 'Radial' }, { id: 'pattern', label: 'Motif' }].map(function (f) {
+      var on = s.fillType === f.id;
+      return {
+        label: f.label, pressed: on ? 'true' : 'false', style: tile(on),
+        pick: function () { self.setState({ fillType: f.id, target: f.id === 'color' ? 'fill' : (self.state.target === 'fill' ? 'g1' : self.state.target) }); }
+      };
+    });
+    function ring(id) { return s.target === id ? '#F7D618' : '#e8f1f1'; }
+
+    return {
+      accent: accent,
+      text: s.text,
+      setText: function (e) { self.setState({ text: e.target.value }); },
+      charCount: s.text.length,
+      converted: s.converted,
+      convertLabel: s.converted ? 'Contours (convertis)' : 'Convertir en contours',
+      convertedOutline: s.converted ? '2px dashed #F7D618' : 'none',
+      toggleConvert: function () { self.setState({ converted: !self.state.converted }); },
+      eyeMsg: s.eyeMsg,
+      eyedrop: function () {
+        if (typeof window !== 'undefined' && window.EyeDropper) {
+          new window.EyeDropper().open().then(function (r) { applyHex(r.sRGBHex); self.setState({ eyeMsg: '' }); }).catch(function () {});
+        } else {
+          self.setState({ eyeMsg: 'Pipette système indisponible dans ce navigateur : dans l\'outil, cliquez directement une couleur de l\'aperçu.' });
+        }
+      },
+
+      modes: modes, modeName: modeNames[s.mode],
+      isPoint: s.mode === 'point', isPara: s.mode === 'para', isPath: s.mode === 'path',
+      paraWidth: s.paraWidth, setParaWidth: num('paraWidth'),
+      shape: s.shape, setShape: function (e) { self.setState({ shape: e.target.value }); },
+      start: s.start, setStart: num('start'),
+      sides: sides,
+
+      tabs: tabs, tabCar: s.tab === 'car', tabPara: s.tab === 'para', tabStyle: s.tab === 'style',
+      charFields: charFields, toggles: toggles,
+      aligns: aligns, paraFields: paraFields, justifyInPoint: s.mode === 'point' && textAlign === 'justify',
+
+      textStyle: textStyle, transform: transform,
+      origin: pointAlign === 'center' ? 'center center' : pointAlign === 'right' ? 'right center' : 'left center',
+      pointAlign: pointAlign, paragraphs: paragraphs,
+
+      pathD: PATHS[s.shape], pathText: s.text.split('\n')[0],
+      pathSize: Math.min(s.size, 72), svgWeight: s.bold ? 700 : 500, svgTracking: s.tracking / 1000 * Math.min(s.size, 72),
+      svgFill: svgFill, svgStroke: s.strokeOn ? colHex(C.stroke) : 'none', svgStrokeW: s.strokeOn ? strokeW : 0,
+      strokeOpacity: (C.stroke.a / 100) * (s.strokeOp / 100), svgPaintOrder: s.strokePos === 'outside' ? 'stroke' : 'normal',
+      baseline: s.side === 'under' ? 'hanging' : 'alphabetic',
+      textTransform: textTransform, fontVariant: fontVariant, decoration: decoration,
+      angle: s.angle, setAngle: num('angle'),
+      g1Rgba: g1, g2Rgba: g2, g1Hex: colHex(C.g1), g2Hex: colHex(C.g2), g1Ring: ring('g1'), g2Ring: ring('g2'),
+      gradBar: 'linear-gradient(to right, ' + g1 + ', ' + g2 + ')',
+
+      strokeOn: s.strokeOn, toggleStroke: flip('strokeOn'),
+      strokeW: s.strokeW, setStrokeW: num('strokeW'),
+      strokeOpPct: s.strokeOp, setStrokeOp: num('strokeOp'),
+      strokePos: s.strokePos, setStrokePos: function (e) { self.setState({ strokePos: e.target.value }); },
+      strokeRing: ring('stroke'),
+      fillTypes: fillTypes, hasGradient: s.fillType !== 'color', isPattern: s.fillType === 'pattern',
+
+      fgHex: colHex(C.fill), bgHex: colHex(C.stroke),
+      targetFill: function () { self.setState({ target: 'fill', hexDraft: null }); },
+      targetStroke: function () { self.setState({ target: 'stroke', hexDraft: null }); },
+      targetG1: function () { self.setState({ target: 'g1', hexDraft: null }); },
+      targetG2: function () { self.setState({ target: 'g2', hexDraft: null }); },
+      swapColors: function () { self.setState(function (st) { var c = Object.assign({}, st.colors); var t = c.fill; c.fill = c.stroke; c.stroke = t; return { colors: c }; }); },
+      resetColors: function () { self.setState(function (st) { var c = Object.assign({}, st.colors); c.fill = hsvFromHex('#000000'); c.stroke = hsvFromHex('#FFFFFF'); return { colors: c }; }); },
+
+      targets: targets,
+      hueColor: toHex(hsvToRgb(cur.h, 100, 100)),
+      svLeft: cur.s, svTop: 100 - cur.v,
+      svDown: function (e) { try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {} pickSV(e); },
+      svMove: function (e) { if (e.buttons & 1) pickSV(e); },
+      h: cur.h, setHue: function (e) { self.setColor(self.state.target, { h: Number(e.target.value) }); },
+      a: cur.a, setAlpha: function (e) { self.setColor(self.state.target, { a: clamp(Number(e.target.value) || 0, 0, 100) }); },
+      curHex: curHex, curRgba: colRgba(cur),
+      hexField: s.hexDraft != null ? s.hexDraft : curHex,
+      setHex: function (e) { var v = e.target.value; if (!applyHex(v)) self.setState({ hexDraft: v }); },
+      blurHex: function () { self.setState({ hexDraft: null }); },
+      rgbFields: rgbFields, hsvFields: hsvFields,
+      swatches: swatches,
+      saveSwatch: function () { self.setState(function (st) { return { saved: st.saved.concat([curHex]).slice(-12) }; }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fontafond – Éditeur de glyphe</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;700&amp;display=swap">
+<style>
+body{margin:0;background:#0b1a1b}
+a{color:#7fbfff}a:hover{color:#b3d9ff}
+.at-btn{transition:background .15s ease}
+.at-btn:hover{background:#1b3a3b}
+.at-tools{display:flex;flex-direction:column;gap:4px;padding:8px 6px;width:56px;box-sizing:border-box;border-right:1px solid #24494a;background:#102526}
+.at-menus{display:flex}
+@media (max-width:760px){.at-tools{flex-direction:row;width:100%;border-right:0;border-bottom:1px solid #24494a;overflow-x:auto}.at-menus{display:none}.at-hide-sm{display:none}}
+</style>
+</helmet>
+<div style="min-height: 900px; display: flex; flex-direction: column; background: #0b1a1b; color: #e8f1f1; font-family: Inter, system-ui, sans-serif; font-size: 13px;">
+
+  <!-- Barre de menus -->
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 0 12px; min-height: 44px; background: #102526; border-bottom: 1px solid #24494a;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="width: 28px; height: 28px; border-radius: 8px; background: #CE1021; display: flex; align-items: center; justify-content: center; color: #ffffff; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px;">Aa</div>
+      <span style="font-weight: 600; font-size: 14px;">Fontafond</span>
+    </div>
+    <nav class="at-menus" aria-label="Menus" style="gap: 2px;">
+      <button class="at-btn" style="background: transparent; border: 0; color: #cfdede; font: inherit; padding: 6px 10px; border-radius: 6px; cursor: pointer;">Fichier</button>
+      <button class="at-btn" style="background: transparent; border: 0; color: #cfdede; font: inherit; padding: 6px 10px; border-radius: 6px; cursor: pointer;">Édition</button>
+      <button class="at-btn" style="background: transparent; border: 0; color: #cfdede; font: inherit; padding: 6px 10px; border-radius: 6px; cursor: pointer;">Glyphe</button>
+      <button class="at-btn" style="background: transparent; border: 0; color: #cfdede; font: inherit; padding: 6px 10px; border-radius: 6px; cursor: pointer;">Affichage</button>
+      <button class="at-btn" style="background: transparent; border: 0; color: #cfdede; font: inherit; padding: 6px 10px; border-radius: 6px; cursor: pointer;">Aide</button>
+    </nav>
+    <div class="at-hide-sm" style="flex-grow: 1; text-align: center; color: #9fb8b8;">Ma Police Manuscrite <span style="color: #e8f1f1;">· D</span></div>
+    <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+      <button class="at-btn" style="display: flex; align-items: center; gap: 8px; background: #17393a; border: 1px solid #24494a; color: #9fb8b8; font: inherit; padding: 6px 10px; border-radius: 8px; cursor: pointer; min-height: 32px;">
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+        Rechercher une action
+        <kbd style="font-family: inherit; font-size: 11px; background: #24494a; color: #cfdede; padding: 2px 6px; border-radius: 4px;">Ctrl K</kbd>
+      </button>
+      <button class="at-btn" aria-label="Changer de thème" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid #24494a; color: #cfdede; border-radius: 8px; cursor: pointer;">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"></path></svg>
+      </button>
+      <button style="display: flex; align-items: center; gap: 8px; background: {{accent}}; border: 0; color: #ffffff; font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 8px; cursor: pointer; min-height: 34px;">
+        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+        Exporter .otf
+      </button>
+    </div>
+  </header>
+
+  <!-- Barre d'options (change selon l'outil) -->
+  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 6px 12px; min-height: 44px; box-sizing: border-box; background: #132c2d; border-bottom: 1px solid #24494a;">
+    <span style="font-weight: 600; color: #e8f1f1;">{{toolName}}</span>
+    <span aria-hidden="true" style="width: 1px; height: 20px; background: #24494a;"></span>
+    <sc-if value="{{isPen}}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px;">
+        <div role="group" aria-label="Type de point" style="display: flex; background: #0b1a1b; border: 1px solid #24494a; border-radius: 8px; padding: 2px;">
+          <button style="background: #24494a; border: 0; color: #e8f1f1; font: inherit; padding: 4px 10px; border-radius: 6px; cursor: pointer;">Courbe</button>
+          <button class="at-btn" style="background: transparent; border: 0; color: #9fb8b8; font: inherit; padding: 4px 10px; border-radius: 6px; cursor: pointer;">Angle</button>
+        </div>
+        <label style="display: flex; align-items: center; gap: 6px; color: #cfdede;"><input type="checkbox" checked="" style="accent-color: {{accent}};"> Aimanter à la grille</label>
+        <label style="display: flex; align-items: center; gap: 6px; color: #cfdede;"><input type="checkbox" checked="" style="accent-color: {{accent}};"> Afficher les poignées</label>
+      </div>
+    </sc-if>
+    <sc-if value="{{isBrush}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px;">
+        <label style="display: flex; align-items: center; gap: 8px; color: #cfdede;">Épaisseur <input type="range" min="10" max="200" value="80" style="width: 110px; accent-color: {{accent}};"> <span style="color: #e8f1f1;">80</span></label>
+        <label style="display: flex; align-items: center; gap: 8px; color: #cfdede;">Lissage <input type="range" min="0" max="100" value="50" style="width: 110px; accent-color: {{accent}};"> <span style="color: #e8f1f1;">50 %</span></label>
+        <label style="display: flex; align-items: center; gap: 6px; color: #cfdede;"><input type="checkbox" checked="" style="accent-color: {{accent}};"> Pression du stylet</label>
+      </div>
+    </sc-if>
+    <sc-if value="{{isOther}}" hint-placeholder-val="{{ false }}">
+      <span style="color: #9fb8b8;">{{toolHint}}</span>
+    </sc-if>
+    <div style="display: flex; align-items: center; gap: 4px; margin-left: auto;">
+      <button class="at-btn" aria-label="Annuler" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: transparent; border: 0; color: #cfdede; border-radius: 6px; cursor: pointer;">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+      </button>
+      <button class="at-btn" aria-label="Rétablir" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: transparent; border: 0; color: #cfdede; border-radius: 6px; cursor: pointer;">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Corps : outils | plan de travail | panneaux -->
+  <div style="flex-grow: 1; display: flex; flex-wrap: wrap; min-height: 0;">
+
+    <div class="at-tools" role="toolbar" aria-label="Outils">
+      <button aria-label="Plume (P)" title="Plume (P)" onClick="{{pickPen}}" style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; cursor: pointer; background: {{penBg}}; color: {{penFg}};">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
+      </button>
+      <button aria-label="Pinceau (B)" title="Pinceau (B)" onClick="{{pickBrush}}" style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; cursor: pointer; background: {{brushBg}}; color: {{brushFg}};">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.06 11.9l8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"></path><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"></path></svg>
+      </button>
+      <button aria-label="Sélection (V)" title="Sélection (V)" onClick="{{pickSelect}}" style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; cursor: pointer; background: {{selectBg}}; color: {{selectFg}};">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>
+      </button>
+      <span aria-hidden="true" style="height: 1px; width: 32px; margin: 4px auto; background: #24494a; flex-shrink: 0;"></span>
+      <button aria-label="Main (H)" title="Main (H)" onClick="{{pickHand}}" style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; cursor: pointer; background: {{handBg}}; color: {{handFg}};">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"></path><path d="M14 10V4a2 2 0 0 0-4 0v6"></path><path d="M10 10.5V6a2 2 0 0 0-4 0v8"></path><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></svg>
+      </button>
+      <button aria-label="Zoom (Z)" title="Zoom (Z)" onClick="{{pickZoom}}" style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; cursor: pointer; background: {{zoomBg}}; color: {{zoomFg}};">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path><path d="M11 8v6M8 11h6"></path></svg>
+      </button>
+      <button aria-label="Texte (T)" title="Texte (T)" onClick="{{pickText}}" style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; cursor: pointer; background: {{textBg}}; color: {{textFg}};">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"></path><path d="M9 20h6"></path><path d="M12 4v16"></path></svg>
+      </button>
+    </div>
+
+    <!-- Plan de travail -->
+    <main style="flex: 999 1 560px; min-width: 0; position: relative; display: flex; align-items: center; justify-content: center; padding: 32px 24px 64px; box-sizing: border-box; background: #081415;">
+      <div style="width: 100%; max-width: 620px; background: #fbfbfd; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.45); overflow: hidden;">
+        <svg role="img" aria-label="Glyphe D en cours d'édition, avec lignes guides et points de Bézier" viewBox="0 0 1100 1200" style="display: block; width: 100%; height: auto;">
+          <defs>
+            <pattern id="grille" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#eceef3" stroke-width="2"></path></pattern>
+          </defs>
+          <rect x="0" y="0" width="1100" height="1200" fill="url(#grille)"></rect>
+          <rect x="50" y="0" width="1000" height="1200" fill="#e6f2f2" opacity="0.45"></rect>
+          <line x1="0" y1="100" x2="1100" y2="100" stroke="#9fb8b8" stroke-width="2" stroke-dasharray="10 8"></line>
+          <text x="12" y="88" font-size="24" fill="#5b6075" font-family="Inter, sans-serif">Ascendante 800</text>
+          <line x1="0" y1="200" x2="1100" y2="200" stroke="#CE1021" stroke-width="2"></line>
+          <text x="12" y="188" font-size="24" fill="#a50d1a" font-family="Inter, sans-serif">Capitales 700</text>
+          <line x1="0" y1="400" x2="1100" y2="400" stroke="#205A5C" stroke-width="2"></line>
+          <text x="12" y="388" font-size="24" fill="#205A5C" font-family="Inter, sans-serif">Hauteur x 500</text>
+          <line x1="0" y1="900" x2="1100" y2="900" stroke="#007FFF" stroke-width="3"></line>
+          <text x="12" y="888" font-size="24" fill="#0059b3" font-family="Inter, sans-serif">Ligne de base 0</text>
+          <line x1="0" y1="1100" x2="1100" y2="1100" stroke="#9fb8b8" stroke-width="2" stroke-dasharray="10 8"></line>
+          <text x="12" y="1088" font-size="24" fill="#5b6075" font-family="Inter, sans-serif">Descendante −200</text>
+          <line x1="50" y1="0" x2="50" y2="1200" stroke="#9fb8b8" stroke-width="2"></line>
+          <line x1="1050" y1="0" x2="1050" y2="1200" stroke="{{accent}}" stroke-width="3" stroke-dasharray="14 8"></line>
+          <rect x="1034" y="558" width="32" height="84" rx="9" fill="#F7D618" stroke="#0b1a1b" stroke-width="3"></rect>
+          <text x="1040" y="1160" font-size="24" fill="#5b6075" text-anchor="end" font-family="Inter, sans-serif">Chasse 1000</text>
+
+          <path fill-rule="evenodd" fill="#1d1f27" fill-opacity="0.9" stroke="{{accent}}" stroke-width="3" d="M200 900 L200 200 L480 200 C760 200 920 360 920 550 C920 740 760 900 480 900 Z M360 760 L470 760 C650 760 755 680 755 550 C755 420 650 340 470 340 L360 340 Z"></path>
+
+          <line x1="920" y1="360" x2="920" y2="740" stroke="{{accent}}" stroke-width="2"></line>
+          <circle cx="920" cy="360" r="9" fill="#ffffff" stroke="{{accent}}" stroke-width="3"></circle>
+          <circle cx="920" cy="740" r="9" fill="#ffffff" stroke="{{accent}}" stroke-width="3"></circle>
+
+          <rect x="191" y="891" width="18" height="18" fill="#ffffff" stroke="#1d1f27" stroke-width="3"></rect>
+          <rect x="191" y="191" width="18" height="18" fill="#ffffff" stroke="#1d1f27" stroke-width="3"></rect>
+          <rect x="471" y="191" width="18" height="18" fill="#ffffff" stroke="#1d1f27" stroke-width="3"></rect>
+          <rect x="471" y="891" width="18" height="18" fill="#ffffff" stroke="#1d1f27" stroke-width="3"></rect>
+          <rect x="351" y="751" width="18" height="18" fill="#ffffff" stroke="#1d1f27" stroke-width="3"></rect>
+          <rect x="461" y="751" width="18" height="18" fill="#ffffff" stroke="#1d1f27" stroke-width="3"></rect>
+          <circle cx="755" cy="550" r="10" fill="#ffffff" stroke="#1d1f27" stroke-width="3"></circle>
+          <rect x="461" y="331" width="18" height="18" fill="#ffffff" stroke="#1d1f27" stroke-width="3"></rect>
+          <rect x="351" y="331" width="18" height="18" fill="#ffffff" stroke="#1d1f27" stroke-width="3"></rect>
+          <circle cx="920" cy="550" r="14" fill="{{accent}}" stroke="#ffffff" stroke-width="4"></circle>
+        </svg>
+      </div>
+
+      <div style="position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 4px; background: #132c2d; border: 1px solid #24494a; border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.35);">
+        <button class="at-btn" aria-label="Dézoomer" style="width: 32px; height: 32px; background: transparent; border: 0; color: #e8f1f1; border-radius: 6px; cursor: pointer; font: inherit; font-size: 16px;">−</button>
+        <span style="min-width: 56px; text-align: center; color: #e8f1f1;">100 %</span>
+        <button class="at-btn" aria-label="Zoomer" style="width: 32px; height: 32px; background: transparent; border: 0; color: #e8f1f1; border-radius: 6px; cursor: pointer; font: inherit; font-size: 16px;">+</button>
+        <span aria-hidden="true" style="width: 1px; height: 18px; background: #24494a;"></span>
+        <button class="at-btn" style="height: 32px; background: transparent; border: 0; color: #cfdede; border-radius: 6px; cursor: pointer; font: inherit; padding: 0 10px;">Ajuster</button>
+      </div>
+    </main>
+
+    <!-- Panneaux à droite -->
+    <aside aria-label="Panneaux" style="flex: 1 1 300px; max-width: 100%; box-sizing: border-box; background: #132c2d; border-left: 1px solid #24494a; display: flex; flex-direction: column;">
+
+      <section style="border-bottom: 1px solid #24494a;">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px;">
+          <h2 style="margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9fb8b8;">Glyphes</h2>
+          <span style="font-size: 12px; color: #9fb8b8;">4 / 96 dessinés</span>
+        </div>
+        <div style="padding: 0 14px 12px; display: flex; flex-direction: column; gap: 10px;">
+          <label style="display: flex; align-items: center; gap: 8px; background: #0b1a1b; border: 1px solid #24494a; border-radius: 8px; padding: 0 10px; min-height: 34px; color: #9fb8b8;">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+            <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Rechercher un caractère</span>
+            <input type="text" placeholder="Rechercher un caractère (ex. é)" style="flex-grow: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #e8f1f1; font: inherit;">
+          </label>
+          <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px;">
+            <sc-for list="{{glyphs}}" as="g" hint-placeholder-count="24">
+              <button style="{{g.style}}" aria-label="Glyphe {{g.char}}">{{g.char}}</button>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+
+      <section style="border-bottom: 1px solid #24494a;">
+        <div style="padding: 10px 14px;">
+          <h2 style="margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9fb8b8;">Métriques du glyphe</h2>
+        </div>
+        <div style="padding: 0 14px 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+          <label style="display: flex; flex-direction: column; gap: 4px; color: #9fb8b8; font-size: 12px;">Chasse
+            <input type="number" value="1000" style="background: #0b1a1b; border: 1px solid #24494a; border-radius: 8px; color: #e8f1f1; font: inherit; font-size: 13px; padding: 7px 10px; min-width: 0;">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 4px; color: #9fb8b8; font-size: 12px;">Unicode
+            <input type="text" value="U+0044" style="background: #0b1a1b; border: 1px solid #24494a; border-radius: 8px; color: #e8f1f1; font: inherit; font-size: 13px; padding: 7px 10px; min-width: 0;">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 4px; color: #9fb8b8; font-size: 12px;">Approche gauche
+            <input type="number" value="150" style="background: #0b1a1b; border: 1px solid #24494a; border-radius: 8px; color: #e8f1f1; font: inherit; font-size: 13px; padding: 7px 10px; min-width: 0;">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 4px; color: #9fb8b8; font-size: 12px;">Approche droite
+            <input type="number" value="130" style="background: #0b1a1b; border: 1px solid #24494a; border-radius: 8px; color: #e8f1f1; font: inherit; font-size: 13px; padding: 7px 10px; min-width: 0;">
+          </label>
+        </div>
+      </section>
+
+      <section style="border-bottom: 1px solid #24494a;">
+        <div style="padding: 10px 14px;">
+          <h2 style="margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9fb8b8;">Contours</h2>
+        </div>
+        <ul style="list-style: none; margin: 0; padding: 0 8px 10px; display: flex; flex-direction: column; gap: 2px;">
+          <li style="display: flex; align-items: center; gap: 10px; padding: 8px 8px; border-radius: 8px; background: #1b3a3b;">
+            <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; background: {{accent}};"></span>
+            <span style="flex-grow: 1;">Contour extérieur</span>
+            <span style="color: #9fb8b8; font-size: 12px;">5 points</span>
+          </li>
+          <li style="display: flex; align-items: center; gap: 10px; padding: 8px 8px; border-radius: 8px;">
+            <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; border: 2px solid #9fb8b8; box-sizing: border-box;"></span>
+            <span style="flex-grow: 1;">Contour intérieur</span>
+            <span style="color: #9fb8b8; font-size: 12px;">5 points</span>
+          </li>
+        </ul>
+      </section>
+
+      <section style="flex-grow: 1;">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px;">
+          <h2 style="margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9fb8b8;">Aperçu en direct</h2>
+          <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #9fb8b8;"><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: #F7D618;"></span>En direct</span>
+        </div>
+        <div style="padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="background: #fbfbfd; color: #1d1f27; border-radius: 10px; padding: 14px 16px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: {{previewSize}}px; line-height: 1.1; overflow: hidden; white-space: nowrap;">DADA BAC</div>
+          <label style="display: flex; align-items: center; gap: 10px; color: #9fb8b8; font-size: 12px;">Taille
+            <input type="range" min="16" max="56" value="{{previewSize}}" onChange="{{setPreviewSize}}" style="flex-grow: 1; accent-color: {{accent}};">
+            <span style="color: #e8f1f1; min-width: 36px; text-align: right;">{{previewSize}} px</span>
+          </label>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <!-- Barre d'état -->
+  <footer style="display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 6px 14px; min-height: 30px; box-sizing: border-box; background: #102526; border-top: 1px solid #24494a; color: #9fb8b8; font-size: 12px;">
+    <span>Zoom 100 %</span>
+    <span>x 920 · y 350</span>
+    <span>1000 unités / em</span>
+    <span style="display: flex; align-items: center; gap: 6px;"><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: #F7D618;"></span>Enregistré sur cet appareil</span>
+    <span style="margin-left: auto;">Glyphe D · U+0044 · 2 contours · 10 points</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0068D6","options":["#0068D6","#205A5C","#CE1021"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tool: 'pen', previewSize: 34 };
+  }
+  renderVals() {
+    var accent = this.props.accent ?? '#0068D6';
+    var tool = this.state.tool;
+    var self = this;
+    var names = { pen: 'Plume', brush: 'Pinceau', select: 'Sélection', hand: 'Main', zoom: 'Zoom', text: 'Texte' };
+    var hints = {
+      select: 'Cliquez sur un point pour le déplacer, Maj pour en sélectionner plusieurs.',
+      hand: 'Glissez pour vous déplacer dans le plan de travail (ou maintenez Espace).',
+      zoom: 'Cliquez pour zoomer, Alt + clic pour dézoomer.',
+      text: 'Tapez un mot test pour voir vos lettres côte à côte.'
+    };
+    function bg(t) { return tool === t ? accent : 'transparent'; }
+    function fg(t) { return tool === t ? '#ffffff' : '#cfdede'; }
+    function pick(t) { return function () { self.setState({ tool: t }); }; }
+    var drawn = { A: 1, B: 1, C: 1, D: 1 };
+    var letters = 'ABCDEFGHIJKLMNOPQRSTUVWX'.split('');
+    var glyphs = letters.map(function (c) {
+      var base = 'aspect-ratio: 1 / 1; border-radius: 8px; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; padding: 0; ';
+      var style;
+      if (c === 'D') style = base + 'background: #F7D618; color: #0b1a1b; border: 1px solid #F7D618;';
+      else if (drawn[c]) style = base + 'background: #1b3a3b; color: #e8f1f1; border: 1px solid #2c5556;';
+      else style = base + 'background: transparent; color: #8aa5a5; border: 1px dashed #2c5556; font-weight: 500;';
+      return { char: c, style: style };
+    });
+    return {
+      accent: accent,
+      toolName: names[tool],
+      toolHint: hints[tool] || '',
+      isPen: tool === 'pen',
+      isBrush: tool === 'brush',
+      isOther: tool !== 'pen' && tool !== 'brush',
+      penBg: bg('pen'), penFg: fg('pen'), pickPen: pick('pen'),
+      brushBg: bg('brush'), brushFg: fg('brush'), pickBrush: pick('brush'),
+      selectBg: bg('select'), selectFg: fg('select'), pickSelect: pick('select'),
+      handBg: bg('hand'), handFg: fg('hand'), pickHand: pick('hand'),
+      zoomBg: bg('zoom'), zoomFg: fg('zoom'), pickZoom: pick('zoom'),
+      textBg: bg('text'), textFg: fg('text'), pickText: pick('text'),
+      glyphs: glyphs,
+      previewSize: this.state.previewSize,
+      setPreviewSize: function (e) { self.setState({ previewSize: Number(e.target.value) }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

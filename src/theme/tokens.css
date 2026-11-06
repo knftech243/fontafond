@@ -1,0 +1,73 @@
+/* Palette Fontafond : thème sombre teinté sarcelle (voir docs/PLAN.md, « Thème »). */
+:root {
+  /* Fonds */
+  --fd-bg: #0b1a1b;
+  --fd-workspace: #081415;
+  --fd-bar: #102526;
+  --fd-panel: #132c2d;
+  --fd-hover: #1b3a3b;
+  --fd-field: #0b1a1b;
+  --fd-border: #24494a;
+  --fd-border-strong: #3a6a6b;
+
+  /* Palette de la charte */
+  --fd-teal: #205a5c;
+  --fd-teal-light: #2f8285;
+  --fd-blue: #007fff;
+  --fd-blue-strong: #0068d6; /* boutons à texte blanc : contraste suffisant */
+  --fd-yellow: #f7d618;
+  --fd-red: #ce1021;
+
+  /* Texte */
+  --fd-text: #e8f1f1;
+  --fd-text-soft: #cfdede;
+  --fd-text-muted: #9fb8b8;
+  --fd-text-on-yellow: #0b1a1b;
+
+  /* Plan de travail clair (là où l'on dessine) */
+  --fd-paper: #fbfbfd;
+  --fd-ink: #1d1f27;
+
+  --fd-radius: 8px;
+  --fd-radius-lg: 14px;
+  --fd-font: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fd-font-display: 'Space Grotesk', Inter, system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--fd-bg);
+  color: var(--fd-text);
+  font-family: var(--fd-font);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--fd-blue);
+  outline-offset: 2px;
+}
+
+a {
+  color: #7fbfff;
+}
+
+a:hover {
+  color: #b3d9ff;
+}

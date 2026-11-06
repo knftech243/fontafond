@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fontafond – Projets</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;700&amp;family=Caveat:wght@700&amp;family=Playfair+Display:wght@700&amp;display=swap">
+<style>
+body{margin:0;background:#0b1a1b}
+a{color:#7fbfff}a:hover{color:#b3d9ff}
+.at-btn{transition:background .15s ease}
+.at-btn:hover{background:#1b3a3b}
+.at-card{transition:border-color .15s ease}
+.at-card:hover{border-color:#3a6a6b}
+</style>
+</helmet>
+<div style="min-height: 900px; display: flex; flex-direction: column; background: #0b1a1b; color: #e8f1f1; font-family: Inter, system-ui, sans-serif; font-size: 13px;">
+
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 0 12px; min-height: 44px; background: #102526; border-bottom: 1px solid #24494a;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="width: 28px; height: 28px; border-radius: 8px; background: #CE1021; display: flex; align-items: center; justify-content: center; color: #ffffff; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px;">Aa</div>
+      <span style="font-weight: 600; font-size: 14px;">Fontafond</span>
+    </div>
+    <nav aria-label="Sections" style="display: flex; gap: 2px; background: #0b1a1b; border: 1px solid #24494a; border-radius: 10px; padding: 3px;">
+      <span aria-current="page" style="background: #24494a; color: #ffffff; padding: 6px 12px; border-radius: 7px;">Projets</span>
+      <a href="Main.dc.html" class="at-btn" style="color: #cfdede; text-decoration: none; padding: 6px 12px; border-radius: 7px;">Éditeur</a>
+      <a href="Studio.dc.html" class="at-btn" style="color: #cfdede; text-decoration: none; padding: 6px 12px; border-radius: 7px;">Studio texte</a>
+    </nav>
+  </header>
+
+  <main style="flex-grow: 1; width: 100%; max-width: 1180px; margin: 0 auto; box-sizing: border-box; padding: 40px 24px; display: flex; flex-direction: column; gap: 32px;">
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700;">Mes polices</h1>
+      <p style="margin: 0; color: #9fb8b8; font-size: 14px;">Créez une police de zéro ou ouvrez une police existante pour la modifier. Tout reste sur votre appareil.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+      <a href="Main.dc.html" class="at-card" style="display: flex; flex-direction: column; gap: 14px; padding: 24px; background: #132c2d; border: 1px solid #24494a; border-radius: 14px; color: #e8f1f1; text-decoration: none;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: {{accent}}; color: #ffffff; display: flex; align-items: center; justify-content: center;">
+          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+        </div>
+        <span style="font-size: 17px; font-weight: 600;">Nouvelle police</span>
+        <span style="color: #9fb8b8; line-height: 1.5;">Partez d'une grille vide : A–Z, a–z, chiffres, ponctuation et accents français.</span>
+      </a>
+
+      <div class="at-card" style="display: flex; flex-direction: column; gap: 14px; padding: 24px; background: #132c2d; border: 2px dashed #3a6a6b; border-radius: 14px;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: #1b3a3b; color: #e8f1f1; display: flex; align-items: center; justify-content: center;">
+          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg>
+        </div>
+        <span style="font-size: 17px; font-weight: 600;">Modifier une police existante</span>
+        <span style="color: #9fb8b8; line-height: 1.5;">Glissez un fichier .ttf, .otf ou .woff ici. Ses lettres, sa chasse et son crénage deviennent modifiables.</span>
+        <label style="align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; background: #24494a; color: #ffffff; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; min-height: 20px;">
+          Choisir un fichier
+          <input type="file" accept=".ttf,.otf,.woff" style="position: absolute; width: 1px; height: 1px; opacity: 0;">
+        </label>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; padding: 20px 22px; background: #2a2706; border: 1px solid #8a7a12; border-radius: 14px; color: #f5eeb8; line-height: 1.5;">
+        <span style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #F7D618;">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><path d="M12 9v4M12 17h.01"></path></svg>
+          Licence de la police
+        </span>
+        <span>Ne modifiez que des polices dont la licence le permet (par exemple la licence libre OFL, utilisée par beaucoup de polices Google). Si la licence l'exige, donnez un nouveau nom à votre version.</span>
+      </div>
+    </div>
+
+    <section aria-labelledby="import-titre" style="display: flex; flex-direction: column; gap: 14px; padding: 20px; background: #132c2d; border: 1px solid #24494a; border-radius: 14px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+        <span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #F7D618;"></span>
+        <h2 id="import-titre" style="margin: 0; font-size: 15px; font-weight: 600;">Police importée : MaSerif-Bold.ttf</h2>
+        <span style="color: #9fb8b8;">243 glyphes · 1 180 paires de crénage · 1000 unités/em</span>
+        <a href="Main.dc.html" style="margin-left: auto; background: {{accent}}; color: #ffffff; text-decoration: none; font-weight: 600; padding: 9px 14px; border-radius: 8px;">Ouvrir dans l'éditeur</a>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
+        <label style="display: flex; flex-direction: column; gap: 6px; color: #9fb8b8; font-size: 12px;">Nom de votre version
+          <input type="text" value="MaSerif Lushi" style="background: #0b1a1b; border: 1px solid #24494a; border-radius: 8px; color: #e8f1f1; font: inherit; font-size: 13px; padding: 8px 10px; min-width: 0;">
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; color: #9fb8b8; font-size: 12px;">Graisse de tout le texte
+          <input type="range" min="-50" max="50" value="10" style="accent-color: {{accent}};">
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; color: #9fb8b8; font-size: 12px;">Inclinaison
+          <input type="range" min="0" max="20" value="0" style="accent-color: {{accent}};">
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; color: #9fb8b8; font-size: 12px;">Approche globale
+          <input type="range" min="-100" max="200" value="20" style="accent-color: {{accent}};">
+        </label>
+      </div>
+      <p style="margin: 0; color: #9fb8b8; font-size: 12px;">Réglages globaux appliqués à toutes les lettres d'un coup ; chaque lettre reste ensuite modifiable une par une dans l'éditeur.</p>
+    </section>
+
+    <section aria-labelledby="recents-titre" style="display: flex; flex-direction: column; gap: 14px;">
+      <h2 id="recents-titre" style="margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9fb8b8;">Récents</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px;">
+        <sc-for list="{{projects}}" as="p" hint-placeholder-count="3">
+          <a href="Main.dc.html" class="at-card" style="display: flex; flex-direction: column; background: #132c2d; border: 1px solid #24494a; border-radius: 14px; overflow: hidden; color: #e8f1f1; text-decoration: none;">
+            <div style="{{p.sampleStyle}}">{{p.sample}}</div>
+            <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px;">
+              <span style="font-weight: 600;">{{p.name}}</span>
+              <span style="color: #9fb8b8; font-size: 12px;">{{p.meta}}</span>
+            </div>
+          </a>
+        </sc-for>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0068D6","options":["#0068D6","#205A5C","#CE1021"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var accent = this.props.accent ?? '#0068D6';
+    var base = 'height: 120px; display: flex; align-items: center; justify-content: center; background: #fbfbfd; color: #1d1f27; ';
+    return {
+      accent: accent,
+      projects: [
+        { name: 'Ma Police Manuscrite', meta: '4 / 96 glyphes · créée de zéro', sample: 'Abcd', sampleStyle: base + "font-family: Caveat, cursive; font-weight: 700; font-size: 56px;" },
+        { name: 'MaSerif Lushi', meta: '243 glyphes · importée puis modifiée', sample: 'Rg', sampleStyle: base + "font-family: 'Playfair Display', serif; font-weight: 700; font-size: 56px;" },
+        { name: 'Logo Kisimax', meta: '12 glyphes · titrage', sample: 'KISI', sampleStyle: base + "font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 48px; letter-spacing: 0.08em;" }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

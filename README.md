@@ -4,10 +4,15 @@ Créez et modifiez vos polices dans le navigateur, puis utilisez-les avec un stu
 
 > Projet en cours de construction : voir [docs/PLAN.md](docs/PLAN.md) pour le périmètre et l'avancement des étapes.
 
-## Ce qui fonctionne déjà (étape 1)
-- « Mes polices » : créer, renommer, supprimer, exporter et importer un projet (`.json`).
-- Éditeur : grille des caractères (majuscules, minuscules, chiffres, ponctuation, accents français), recherche, lignes guides, chasse et métriques modifiables.
-- Sauvegarde automatique sur l'appareil.
+## Ce qui fonctionne déjà (étapes 1 et 1 bis)
+- Interface fixe, plein écran, comme un logiciel : la page ne défile jamais.
+- Menus **Fichier**, **Affichage**, **Fenêtre**, **Aide**.
+- Plusieurs polices ouvertes en **onglets** ; chaque fenêtre ou panneau se **redimensionne**, se **replie**, se **détache en fenêtre flottante**, se déplace en glissant son onglet.
+- **Espaces de travail** « Essentiel » et « Dessin », enregistrement de vos propres espaces, « Réinitialiser » ; la disposition est mémorisée.
+- **Apparence** : thème Sombre, Sombre profond ou Clair, taille du texte, fond du plan de travail.
+- Document : zoom (Ctrl + molette, −/+, Ajuster) et outil Main (ou barre d'espace).
+- « Mes polices » (onglet Accueil) : créer, renommer, supprimer, exporter et importer un projet (`.json`).
+- Grille des caractères (majuscules, minuscules, chiffres, ponctuation, accents français), chasse et métriques modifiables, sauvegarde automatique sur l'appareil.
 
 ## Lancer le projet
 
@@ -48,9 +53,10 @@ src/
   model/   données : types, jeu de caractères, projet, stockage IndexedDB
   font/    conversions de contours (et bientôt export .otf)
   editor/  grille et affichage des glyphes
-  ui/      coque de l'application, icônes
-  pages/   Mes polices, Éditeur
-  theme/   couleurs (tokens.css) et styles
+  workspace/ espace de travail : fenêtres (dockview), panneaux, document, dispositions
+  ui/      coque fixe, menus, boîtes de dialogue, icônes
+  pages/   contenu de l'onglet Accueil (Mes polices)
+  theme/   couleurs et thèmes (tokens.css), styles, apparence
 docs/
   PLAN.md      document de référence
   maquette/    sources de la maquette validée

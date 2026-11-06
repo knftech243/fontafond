@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "dockview-react": "^8.8.3",
     "idb-keyval": "^6.3.0",
     "opentype.js": "^2.0.0",
     "perfect-freehand": "^1.2.3",

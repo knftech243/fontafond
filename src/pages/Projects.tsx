@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
-import { createProject } from '../model/project'
 import {
   InvalidProjectFileError,
   deleteProject,
@@ -8,17 +7,17 @@ import {
   importProjectJson,
   listProjects,
   renameProject,
-  saveProject,
 } from '../model/storage'
 import type { ProjectSummary } from '../model/types'
-import { openProject } from '../router'
-import { AppShell } from '../ui/AppShell'
 import { Icon } from '../ui/Icon'
+import { useWorkspace } from '../workspace/workspaceContext'
 import { downloadFile, safeFileName } from '../utils/download'
 
 const dateFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })
 
-export function ProjectsPage() {
+/** Contenu de l'onglet « Accueil » : créer, ouvrir, importer, gérer ses polices. */
+export function ProjectsHome() {
+  const ws = useWorkspace()
   const [projects, setProjects] = useState<ProjectSummary[] | null>(null)
   const [message, setMessage] = useState<{ kind: 'error' | 'info'; text: string } | null>(null)
   const [newName, setNewName] = useState('Ma police')
@@ -35,6 +34,7 @@ export function ProjectsPage() {
     [],
   )
 
+  const { listVersion } = ws
   useEffect(() => {
     let alive = true
     listProjects().then(
@@ -48,12 +48,11 @@ export function ProjectsPage() {
     return () => {
       alive = false
     }
-  }, [])
+  }, [listVersion])
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault()
-    const project = await saveProject(createProject(newName))
-    openProject(project.id)
+    await ws.createAndOpen(newName)
   }
 
   async function handleImportJson(e: ChangeEvent<HTMLInputElement>) {
@@ -75,7 +74,8 @@ export function ProjectsPage() {
   async function handleRename(p: ProjectSummary) {
     const name = window.prompt('Nouveau nom de la police :', p.name)
     if (name && name.trim() && name.trim() !== p.name) {
-      await renameProject(p.id, name)
+      const saved = await renameProject(p.id, name)
+      if (saved) ws.onProjectRenamed(p.id, saved.name)
       await refresh()
     }
   }
@@ -88,20 +88,13 @@ export function ProjectsPage() {
   async function handleDelete(p: ProjectSummary) {
     if (window.confirm(`Supprimer « ${p.name} » ? Cette action est définitive.`)) {
       await deleteProject(p.id)
+      ws.onProjectDeleted(p.id)
       await refresh()
     }
   }
 
   return (
-    <AppShell
-      nav={
-        <nav className="fd-tabs" aria-label="Sections">
-          <span className="fd-tab" aria-current="page">
-            Mes polices
-          </span>
-        </nav>
-      }
-    >
+    <div className="fd-panel-scroll">
       <div className="fd-page">
         <div className="fd-page-head">
           <h1>Mes polices</h1>
@@ -180,7 +173,7 @@ export function ProjectsPage() {
           <ul className="fd-project-list">
             {projects?.map((p) => (
               <li key={p.id} className="fd-project">
-                <button type="button" className="fd-project-open" onClick={() => openProject(p.id)}>
+                <button type="button" className="fd-project-open" onClick={() => ws.openProject(p.id, p.name)}>
                   <span className="fd-project-sample" aria-hidden="true">
                     Aa
                   </span>
@@ -215,6 +208,6 @@ export function ProjectsPage() {
           </ul>
         </section>
       </div>
-    </AppShell>
+    </div>
   )
 }

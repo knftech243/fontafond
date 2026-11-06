@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 
 interface AppShellProps {
-  /** Contenu à droite du logo dans la barre de menus (navigation). */
-  nav?: ReactNode
-  /** Titre centré (nom du projet, glyphe en cours…). */
+  /** Barre de menus (Fichier, Affichage, Fenêtre, Aide). */
+  menu?: ReactNode
+  /** Titre centré (police et glyphe en cours). */
   title?: ReactNode
   /** Boutons à droite de la barre de menus. */
   actions?: ReactNode
@@ -11,15 +11,14 @@ interface AppShellProps {
   options?: ReactNode
   /** Barre d'outils verticale à gauche. */
   tools?: ReactNode
-  /** Panneaux à droite. */
-  panels?: ReactNode
   /** Barre d'état en bas. */
   status?: ReactNode
+  /** Zone des fenêtres (documents et panneaux). */
   children: ReactNode
 }
 
-/** Disposition « logiciel de création » : menus, options, outils, plan de travail, panneaux, état. */
-export function AppShell({ nav, title, actions, options, tools, panels, status, children }: AppShellProps) {
+/** Coque fixe « logiciel de création » : occupe tout l'écran, ne défile jamais. */
+export function AppShell({ menu, title, actions, options, tools, status, children }: AppShellProps) {
   return (
     <div className="fd-app">
       <header className="fd-menubar">
@@ -29,7 +28,7 @@ export function AppShell({ nav, title, actions, options, tools, panels, status, 
           </span>
           <span className="fd-brand-name">Fontafond</span>
         </div>
-        {nav}
+        {menu}
         <div className="fd-menubar-title">{title}</div>
         <div className="fd-menubar-actions">{actions}</div>
       </header>
@@ -41,25 +40,13 @@ export function AppShell({ nav, title, actions, options, tools, panels, status, 
           </div>
         )}
         <main className="fd-main">{children}</main>
-        {panels && (
-          <aside className="fd-panels" aria-label="Panneaux">
-            {panels}
-          </aside>
-        )}
       </div>
       {status && <footer className="fd-status">{status}</footer>}
     </div>
   )
 }
 
-export function Panel({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
-  return (
-    <section className="fd-panel">
-      <div className="fd-panel-head">
-        <h2>{title}</h2>
-        {aside}
-      </div>
-      <div className="fd-panel-body">{children}</div>
-    </section>
-  )
+/** Contenu d'un panneau : défile à l'intérieur s'il est trop long (jamais la page). */
+export function PanelBody({ children }: { children: ReactNode }) {
+  return <div className="fd-panel-scroll">{children}</div>
 }

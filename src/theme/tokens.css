@@ -1,4 +1,4 @@
-/* Palette Fontafond : thème sombre teinté sarcelle (voir docs/PLAN.md, « Thème »). */
+/* Palette Fontafond (voir docs/PLAN.md, « Thème »). Thèmes et tailles via data-* sur <html>. */
 :root {
   /* Fonds */
   --fd-bg: #0b1a1b;
@@ -7,8 +7,12 @@
   --fd-panel: #132c2d;
   --fd-hover: #1b3a3b;
   --fd-field: #0b1a1b;
+  --fd-btn-bg: #17393a;
   --fd-border: #24494a;
   --fd-border-strong: #3a6a6b;
+  --fd-cell-border: #2c5556;
+  --fd-menu-bg: #132c2d;
+  --fd-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 
   /* Palette de la charte */
   --fd-teal: #205a5c;
@@ -24,6 +28,15 @@
   --fd-text-muted: #9fb8b8;
   --fd-text-on-yellow: #0b1a1b;
 
+  /* Messages */
+  --fd-warn-bg: #2a2706;
+  --fd-warn-border: #8a7a12;
+  --fd-warn-text: #f5eeb8;
+  --fd-warn-title: #f7d618;
+  --fd-info-bg: #12363a;
+  --fd-error-bg: #3a0d12;
+  --fd-error-text: #ffd4d8;
+
   /* Plan de travail clair (là où l'on dessine) */
   --fd-paper: #fbfbfd;
   --fd-ink: #1d1f27;
@@ -33,6 +46,68 @@
   --fd-font: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --fd-font-display: 'Space Grotesk', Inter, system-ui, sans-serif;
   color-scheme: dark;
+  font-size: 13px;
+}
+
+/* Sombre profond */
+:root[data-theme='deep'] {
+  --fd-bg: #061011;
+  --fd-workspace: #040b0c;
+  --fd-bar: #0a1a1b;
+  --fd-panel: #0d2122;
+  --fd-hover: #163334;
+  --fd-field: #061011;
+  --fd-btn-bg: #12302f;
+  --fd-border: #1d3d3e;
+  --fd-border-strong: #2f5a5b;
+  --fd-cell-border: #234647;
+  --fd-menu-bg: #0d2122;
+}
+
+/* Clair */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --fd-bg: #e9f0f0;
+  --fd-workspace: #d3dfdf;
+  --fd-bar: #ffffff;
+  --fd-panel: #f6f9f9;
+  --fd-hover: #e1ecec;
+  --fd-field: #ffffff;
+  --fd-btn-bg: #e9f0f0;
+  --fd-border: #c3d4d4;
+  --fd-border-strong: #8fb0b0;
+  --fd-cell-border: #b3c9c9;
+  --fd-menu-bg: #ffffff;
+  --fd-shadow: 0 12px 32px rgba(11, 26, 27, 0.18);
+  --fd-text: #0b1a1b;
+  --fd-text-soft: #1f3a3b;
+  --fd-text-muted: #476768;
+  --fd-warn-bg: #fff8cc;
+  --fd-warn-border: #c9ad00;
+  --fd-warn-text: #4a3f00;
+  --fd-warn-title: #6b5a00;
+  --fd-info-bg: #dff0f0;
+  --fd-error-bg: #fde3e6;
+  --fd-error-text: #8a0b17;
+}
+
+/* Taille du texte de l'interface */
+:root[data-ui-size='small'] {
+  font-size: 12px;
+}
+:root[data-ui-size='large'] {
+  font-size: 15px;
+}
+
+/* Fond du plan de travail (indépendant du thème, comme dans les logiciels de création) */
+:root[data-canvas='grey'] {
+  --fd-workspace: #3c494a;
+}
+:root[data-canvas='light'] {
+  --fd-workspace: #c9d7d7;
+}
+:root[data-theme='light'][data-canvas='dark'] {
+  --fd-workspace: #1f3132;
 }
 
 *,
@@ -41,13 +116,20 @@
   box-sizing: border-box;
 }
 
+/* Interface fixe : la page ne défile jamais. */
 html,
-body {
+body,
+#root {
+  height: 100%;
   margin: 0;
+  overflow: hidden;
+}
+
+body {
   background: var(--fd-bg);
   color: var(--fd-text);
   font-family: var(--fd-font);
-  font-size: 13px;
+  font-size: 1rem;
   line-height: 1.4;
 }
 
@@ -65,9 +147,5 @@ textarea {
 }
 
 a {
-  color: #7fbfff;
-}
-
-a:hover {
-  color: #b3d9ff;
+  color: var(--fd-blue);
 }

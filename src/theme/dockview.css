@@ -1,0 +1,49 @@
+/* Fenêtres (dockview) aux couleurs de Fontafond : les variables suivent le thème choisi. */
+.fd-dock {
+  --dv-group-view-background-color: var(--fd-panel);
+  --dv-tabs-and-actions-container-background-color: var(--fd-bar);
+  --dv-tabs-and-actions-container-height: 34px;
+  --dv-tabs-and-actions-container-font-size: 0.92rem;
+  --dv-activegroup-visiblepanel-tab-background-color: var(--fd-panel);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--fd-bar);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--fd-panel);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--fd-bar);
+  --dv-activegroup-visiblepanel-tab-color: var(--fd-text);
+  --dv-activegroup-hiddenpanel-tab-color: var(--fd-text-muted);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--fd-text-soft);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--fd-text-muted);
+  --dv-tab-divider-color: var(--fd-border);
+  --dv-separator-border: var(--fd-border);
+  --dv-paneview-header-border-color: var(--fd-border);
+  --dv-paneview-active-outline-color: var(--fd-blue);
+  --dv-drag-over-background-color: color-mix(in srgb, var(--fd-blue) 22%, transparent);
+  --dv-drag-over-border-color: var(--fd-blue);
+  --dv-edge-dock-indicator-color: var(--fd-blue);
+  --dv-icon-hover-background-color: var(--fd-hover);
+  --dv-sash-color: var(--fd-border);
+  --dv-active-sash-color: var(--fd-blue);
+  --dv-active-sash-transition-delay: 0.1s;
+  --dv-floating-border: 1px solid var(--fd-border-strong);
+  --dv-floating-box-shadow: var(--fd-shadow);
+  --dv-floating-titlebar-background-color: var(--fd-bar);
+  --dv-floating-titlebar-height: 12px;
+  --dv-context-menu-background-color: var(--fd-menu-bg);
+  --dv-context-menu-color: var(--fd-text);
+  --dv-scrollbar-background-color: var(--fd-border-strong);
+  --dv-tabs-container-scrollbar-color: var(--fd-border-strong);
+  --dv-smart-guides-color: var(--fd-yellow);
+  --dv-border-radius: 6px;
+  --dv-tab-font-size: 0.92rem;
+  color-scheme: inherit;
+  font-family: var(--fd-font);
+}
+
+/* Onglet actif d'un groupe actif : liseré bleu, comme l'outil actif. */
+.fd-dock .dv-groupview.dv-active-group .dv-tab.dv-active-tab {
+  box-shadow: inset 0 2px 0 var(--fd-blue);
+}
+
+/* Les documents (plan de travail) prennent le fond choisi dans Apparence. */
+.fd-dock .dv-content-container:has(> .fd-doc) {
+  background: var(--fd-workspace);
+}

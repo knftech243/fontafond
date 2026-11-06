@@ -50,7 +50,7 @@
 }
 
 /* Sombre profond */
-:root[data-theme='deep'] {
+:root[data-fd-theme='deep'] {
   --fd-bg: #061011;
   --fd-workspace: #040b0c;
   --fd-bar: #0a1a1b;
@@ -65,7 +65,7 @@
 }
 
 /* Clair */
-:root[data-theme='light'] {
+:root[data-fd-theme='light'] {
   color-scheme: light;
   --fd-bg: #e9f0f0;
   --fd-workspace: #d3dfdf;
@@ -92,21 +92,21 @@
 }
 
 /* Taille du texte de l'interface */
-:root[data-ui-size='small'] {
+:root[data-fd-ui-size='small'] {
   font-size: 12px;
 }
-:root[data-ui-size='large'] {
+:root[data-fd-ui-size='large'] {
   font-size: 15px;
 }
 
 /* Fond du plan de travail (indépendant du thème, comme dans les logiciels de création) */
-:root[data-canvas='grey'] {
+:root[data-fd-canvas='grey'] {
   --fd-workspace: #3c494a;
 }
-:root[data-canvas='light'] {
+:root[data-fd-canvas='light'] {
   --fd-workspace: #c9d7d7;
 }
-:root[data-theme='light'][data-canvas='dark'] {
+:root[data-fd-theme='light'][data-fd-canvas='dark'] {
   --fd-workspace: #1f3132;
 }
 

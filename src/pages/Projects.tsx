@@ -9,6 +9,7 @@ import {
   renameProject,
 } from '../model/storage'
 import type { ProjectSummary } from '../model/types'
+import { Dialog } from '../ui/Dialog'
 import { Icon } from '../ui/Icon'
 import { useWorkspace } from '../workspace/workspaceContext'
 import { downloadFile, safeFileName } from '../utils/download'
@@ -71,9 +72,16 @@ export function ProjectsHome() {
     }
   }
 
-  async function handleRename(p: ProjectSummary) {
-    const name = window.prompt('Nouveau nom de la police :', p.name)
-    if (name && name.trim() && name.trim() !== p.name) {
+  // Renommer et supprimer passent par des boîtes de dialogue de la page (pas de prompt()/confirm() du navigateur).
+  const [renaming, setRenaming] = useState<{ p: ProjectSummary; name: string } | null>(null)
+  const [deleting, setDeleting] = useState<ProjectSummary | null>(null)
+
+  async function confirmRename(e: FormEvent) {
+    e.preventDefault()
+    if (!renaming) return
+    const { p, name } = renaming
+    setRenaming(null)
+    if (name.trim() && name.trim() !== p.name) {
       const saved = await renameProject(p.id, name)
       if (saved) ws.onProjectRenamed(p.id, saved.name)
       await refresh()
@@ -85,12 +93,13 @@ export function ProjectsHome() {
     if (full) downloadFile(`${safeFileName(full.name)}.fontafond.json`, exportProjectJson(full), 'application/json')
   }
 
-  async function handleDelete(p: ProjectSummary) {
-    if (window.confirm(`Supprimer « ${p.name} » ? Cette action est définitive.`)) {
-      await deleteProject(p.id)
-      ws.onProjectDeleted(p.id)
-      await refresh()
-    }
+  async function confirmDelete() {
+    if (!deleting) return
+    const p = deleting
+    setDeleting(null)
+    await deleteProject(p.id)
+    ws.onProjectDeleted(p.id)
+    await refresh()
   }
 
   return (
@@ -183,7 +192,7 @@ export function ProjectsHome() {
                   </span>
                 </button>
                 <div className="fd-project-actions">
-                  <button type="button" className="fd-icon-btn" aria-label={`Renommer ${p.name}`} onClick={() => handleRename(p)}>
+                  <button type="button" className="fd-icon-btn" aria-label={`Renommer ${p.name}`} onClick={() => setRenaming({ p, name: p.name })}>
                     <Icon name="edit" />
                   </button>
                   <button
@@ -198,7 +207,7 @@ export function ProjectsHome() {
                     type="button"
                     className="fd-icon-btn fd-icon-btn-danger"
                     aria-label={`Supprimer ${p.name}`}
-                    onClick={() => handleDelete(p)}
+                    onClick={() => setDeleting(p)}
                   >
                     <Icon name="trash" />
                   </button>
@@ -208,6 +217,46 @@ export function ProjectsHome() {
           </ul>
         </section>
       </div>
+
+      <Dialog open={!!renaming} title="Renommer la police" onClose={() => setRenaming(null)}>
+        <form className="fd-form" onSubmit={confirmRename}>
+          <label className="fd-field">
+            <span>Nouveau nom</span>
+            <input
+              value={renaming?.name ?? ''}
+              onChange={(e) => renaming && setRenaming({ ...renaming, name: e.target.value })}
+              maxLength={60}
+              required
+              autoFocus
+            />
+          </label>
+          <div className="fd-form-actions">
+            <button type="button" className="fd-btn" onClick={() => setRenaming(null)}>
+              Annuler
+            </button>
+            <button type="submit" className="fd-btn fd-btn-primary">
+              Renommer
+            </button>
+          </div>
+        </form>
+      </Dialog>
+
+      <Dialog open={!!deleting} title="Supprimer la police" onClose={() => setDeleting(null)}>
+        <div className="fd-form">
+          <p>
+            Supprimer « {deleting?.name} » ? Cette action est définitive. Pensez à l'exporter en .json avant si vous voulez la
+            garder.
+          </p>
+          <div className="fd-form-actions">
+            <button type="button" className="fd-btn" onClick={() => setDeleting(null)}>
+              Annuler
+            </button>
+            <button type="button" className="fd-btn fd-btn-danger" onClick={confirmDelete}>
+              Supprimer
+            </button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   )
 }

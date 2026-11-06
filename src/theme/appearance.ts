@@ -64,9 +64,9 @@ export function saveAppearance(a: Appearance, store: Storage | null = storage())
   }
 }
 
-/** Applique l'apparence via des attributs data-* lus par tokens.css. */
+/** Applique l'apparence via des attributs data-fd-* lus par tokens.css (préfixés pour ne pas gêner une page hôte). */
 export function applyAppearance(root: HTMLElement, a: Appearance): void {
-  root.dataset.theme = a.theme
-  root.dataset.uiSize = a.uiSize
-  root.dataset.canvas = a.canvas
+  root.dataset.fdTheme = a.theme
+  root.dataset.fdUiSize = a.uiSize
+  root.dataset.fdCanvas = a.canvas
 }

@@ -545,6 +545,17 @@
   background: var(--fd-hover);
 }
 
+.fd-btn-danger {
+  background: var(--fd-red);
+  border-color: var(--fd-red);
+  color: #fff;
+  font-weight: 600;
+}
+
+.fd-btn-danger:hover:not(:disabled) {
+  background: #a50d1a;
+}
+
 .fd-icon-btn-danger:hover {
   background: var(--fd-red);
   border-color: var(--fd-red);

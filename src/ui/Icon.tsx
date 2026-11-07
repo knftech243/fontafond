@@ -20,6 +20,15 @@ const PATHS = {
   hand: 'M18 11V6a2 2 0 0 0-4 0v5M14 10V4a2 2 0 0 0-4 0v6M10 10.5V6a2 2 0 0 0-4 0v8M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15',
   zoom: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.35-4.35M11 8v6M8 11h6',
   text: 'M4 7V4h16v3M9 20h6M12 4v16',
+  alignLeft: 'M4 6h16M4 10h10M4 14h16M4 18h10',
+  alignCenter: 'M4 6h16M7 10h10M4 14h16M7 18h10',
+  alignRight: 'M4 6h16M10 10h10M4 14h16M10 18h10',
+  justifyLeft: 'M4 6h16M4 10h16M4 14h16M4 18h9',
+  justifyCenter: 'M4 6h16M4 10h16M4 14h16M7.5 18h9',
+  justifyRight: 'M4 6h16M4 10h16M4 14h16M11 18h9',
+  justifyAll: 'M4 6h16M4 10h16M4 14h16M4 18h16',
+  swap: 'M7 4l-3 3 3 3M4 7h11a4 4 0 0 1 4 4M17 20l3-3-3-3M20 17H9a4 4 0 0 1-4-4',
+  eyedropper: 'M2 22l1-1h3l9-9M3 21v-3l9-9M15 6l3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4',
 } as const
 
 export type IconName = keyof typeof PATHS

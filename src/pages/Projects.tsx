@@ -9,6 +9,7 @@ import {
   renameProject,
 } from '../model/storage'
 import type { ProjectSummary } from '../model/types'
+import { deleteStudio, listStudios, type StudioSummary } from '../text/studioStorage'
 import { Dialog } from '../ui/Dialog'
 import { Icon } from '../ui/Icon'
 import { IMPORT_FONT_EVENT } from '../workspace/positions'
@@ -23,6 +24,9 @@ export function ProjectsHome() {
   const [projects, setProjects] = useState<ProjectSummary[] | null>(null)
   const [message, setMessage] = useState<{ kind: 'error' | 'info'; text: string } | null>(null)
   const [newName, setNewName] = useState('Ma police')
+  const [newText, setNewText] = useState('Mon texte')
+  const [studios, setStudios] = useState<StudioSummary[]>([])
+  const [deletingStudio, setDeletingStudio] = useState<StudioSummary | null>(null)
 
   const refresh = useCallback(
     () =>
@@ -47,10 +51,30 @@ export function ProjectsHome() {
         setMessage({ kind: 'error', text: 'Impossible de lire les polices enregistrées sur cet appareil (navigation privée ?).' })
       },
     )
+    listStudios().then(
+      (list) => alive && setStudios(list),
+      () => alive && setStudios([]),
+    )
     return () => {
       alive = false
     }
   }, [listVersion])
+
+  async function handleCreateText(e: FormEvent) {
+    e.preventDefault()
+    // Police proposée : celle ouverte en dernier, sinon la plus récente.
+    await ws.createStudio(newText, ws.activeProjectId ?? projects?.[0]?.id ?? null)
+    ws.setTool('text')
+  }
+
+  async function confirmDeleteStudio() {
+    if (!deletingStudio) return
+    const d = deletingStudio
+    setDeletingStudio(null)
+    await deleteStudio(d.id)
+    ws.onStudioDeleted(d.id)
+    setStudios(await listStudios().catch(() => []))
+  }
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault()
@@ -135,6 +159,21 @@ export function ProjectsHome() {
             </button>
           </form>
 
+          <form className="fd-card" onSubmit={handleCreateText}>
+            <span className="fd-card-icon fd-card-icon-yellow">
+              <Icon name="text" size={22} />
+            </span>
+            <h2>Nouveau texte</h2>
+            <p className="fd-muted">Écrivez avec vos polices : caractère, paragraphe, justification, couleurs, comme dans un logiciel de création.</p>
+            <label className="fd-field">
+              <span>Nom du document</span>
+              <input value={newText} onChange={(e) => setNewText(e.target.value)} maxLength={60} required />
+            </label>
+            <button type="submit" className="fd-btn fd-btn-primary">
+              Créer le document texte
+            </button>
+          </form>
+
           <div className="fd-card fd-card-dashed">
             <span className="fd-card-icon">
               <Icon name="upload" size={22} />
@@ -215,7 +254,48 @@ export function ProjectsHome() {
             ))}
           </ul>
         </section>
+
+        <section aria-labelledby="textes" className="fd-recents">
+          <h2 id="textes" className="fd-section-title">
+            Documents texte
+          </h2>
+          {studios.length === 0 && <p className="fd-muted">Aucun document texte. Créez-en un avec la carte « Nouveau texte ».</p>}
+          <ul className="fd-project-list">
+            {studios.map((d) => (
+              <li key={d.id} className="fd-project">
+                <button type="button" className="fd-project-open" onClick={() => ws.openStudio(d.id, d.name)}>
+                  <span className="fd-project-sample fd-project-sample-text" aria-hidden="true">
+                    T
+                  </span>
+                  <span className="fd-project-name">{d.name}</span>
+                  <span className="fd-muted">
+                    « {d.text.length > 40 ? `${d.text.slice(0, 40)}…` : d.text || 'vide'} » · {dateFmt.format(d.updatedAt)}
+                  </span>
+                </button>
+                <div className="fd-project-actions">
+                  <button type="button" className="fd-icon-btn fd-icon-btn-danger" aria-label={`Supprimer ${d.name}`} onClick={() => setDeletingStudio(d)}>
+                    <Icon name="trash" />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
+
+      <Dialog open={!!deletingStudio} title="Supprimer le document texte" onClose={() => setDeletingStudio(null)}>
+        <div className="fd-form">
+          <p>Supprimer « {deletingStudio?.name} » ? Cette action est définitive. La police utilisée n'est pas supprimée.</p>
+          <div className="fd-form-actions">
+            <button type="button" className="fd-btn" onClick={() => setDeletingStudio(null)}>
+              Annuler
+            </button>
+            <button type="button" className="fd-btn fd-btn-danger" onClick={confirmDeleteStudio}>
+              Supprimer
+            </button>
+          </div>
+        </div>
+      </Dialog>
 
       <Dialog open={!!renaming} title="Renommer la police" onClose={() => setRenaming(null)}>
         <form className="fd-form" onSubmit={confirmRename}>

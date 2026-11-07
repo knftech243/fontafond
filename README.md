@@ -4,7 +4,10 @@ Créez et modifiez vos polices dans le navigateur, puis utilisez-les avec un stu
 
 > Projet en cours de construction : voir [docs/PLAN.md](docs/PLAN.md) pour le périmètre et l'avancement des étapes.
 
-## Ce qui fonctionne déjà (étapes 1 à 3)
+## Ce qui fonctionne déjà (étapes 1 à 4)
+- **Studio texte** : documents texte (Accueil › Nouveau texte, ou Fichier › Nouveau document texte) écrits avec vos polices ; outil Texte (T) : clic = texte de point, clic-glisser = cadre de paragraphe ; Sélection (V) pour déplacer le bloc.
+- Panneaux **Caractère** (police, taille, interlignage, crénage, approche, échelles, ligne de base, faux gras/italique, capitales, petites capitales, souligné, barré), **Paragraphe** (alignements, justifications, retraits, espaces) et **Couleur** (sélecteur standard, HEX/RVB/TSL, opacité, premier plan / arrière-plan, X et D, pipette, nuancier). Glisser sur le nom d'un réglage pour le changer.
+- Espace de travail **Texte** (Fenêtre › Espace de travail).
 - **Exporter la police en .otf** (installable sur PC et téléphone) : glyphes dessinés et accents automatiques.
 - **Accents automatiques** : é = e + ´ dès que la lettre et le signe sont dessinés (groupe « Signes »).
 - **Modifier une police existante** : ouvrir un .ttf, .otf ou .woff (licence affichée, nom de votre version, crénage conservé).
@@ -61,9 +64,10 @@ src/
   model/   données : types, jeu de caractères, projet, stockage IndexedDB
   font/    contours, export .otf, import de polices, accents automatiques, réglages globaux
   editor/  grille, affichage et outils de dessin (géométrie, historique)
+  text/    Studio : mise en page du texte, documents texte, panneaux Caractère, Paragraphe, Couleur
   workspace/ espace de travail : fenêtres (dockview), panneaux, document, dispositions
-  ui/      coque fixe, menus, boîtes de dialogue, icônes
-  pages/   contenu de l'onglet Accueil (Mes polices)
+  ui/      coque fixe, menus, boîtes de dialogue, icônes, sélecteur de couleur, champs numériques, zoom
+  pages/   contenu de l'onglet Accueil (Mes polices, documents texte)
   theme/   couleurs et thèmes (tokens.css), styles, apparence
 docs/
   PLAN.md      document de référence

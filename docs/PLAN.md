@@ -108,6 +108,19 @@ src/
 
 Limite : opentype.js 2.0 n'écrit pas les tables de crénage ; les paires restent dans le projet et seront écrites à l'étape 6.
 
+## 3 quater. Studio texte (étape 4)
+
+| Fonction | Comportement |
+|---|---|
+| **Document texte** | Fichier › Nouveau document texte, ou « Nouveau texte » sur l'Accueil. Onglet de document (flottant, redimensionnable), plan de travail 1 200 × 800 px, zoom et déplacement, sauvegarde automatique. |
+| **Outil Texte (T)** | Clic = texte de point ; clic-glisser = cadre de texte de paragraphe ; saisie dans la zone « Texte » du document. Sélection (V) : déplacer le bloc ; poignée du cadre : largeur. |
+| **Panneau Caractère** | Police (Mes polices), taille, interlignage (auto = 120 %), crénage (métrique / 0), approche, échelles verticale et horizontale, décalage de ligne de base, faux gras, faux italique, majuscules, petites capitales, souligné, barré. Glisser sur l'étiquette pour changer une valeur, double-clic pour la remettre par défaut. |
+| **Panneau Paragraphe** | Gauche, centré, droite, 3 justifications (dernière ligne gauche/centrée/droite), tout justifié ; retraits gauche, droit, première ligne ; espace avant/après. |
+| **Panneau Couleur** | Carré saturation/luminosité, teinte, opacité ; HEX, R V B, T S L (teinte, saturation, luminosité) ; premier plan / arrière-plan (X : inverser, D : noir et blanc) ; pipette ; nuancier (charte, enregistrées, récentes). |
+| **Espace « Texte »** | Studio au centre, Caractère et Paragraphe à droite, Couleur en dessous. |
+| **Annuler / Rétablir** | Aussi dans le Studio ; changements rapprochés (moins de 600 ms) **d'un même réglage** regroupés : un glisser de curseur = une étape, mais deux réglages différents = deux étapes. |
+| **Caractères absents** | Cadre en pointillés à la place de la lettre et message « N caractères absents de la police ». |
+
 ## 4. Étapes
 
 | # | Contenu | Test | État |
@@ -117,8 +130,8 @@ Limite : opentype.js 2.0 n'écrit pas les tables de crénage ; les paires resten
 | 1 bis | Espace de travail modulable : interface fixe, menus, onglets de documents, panneaux repliables et flottants, espaces de travail, apparence, zoom et déplacement | Aucun défilement de page ; disposition conservée au rechargement | Fait (fusionné dans `main`) |
 | 2 | Éditeur : Plume, Pinceau, Sélection, chasse à la souris, approches, annuler/rétablir, menu Édition, panneau Aperçu | Dessiner un « A » et un « a » | Fait (fusionné dans `main`) |
 | 2 bis | Famille d'outils Plume (Plume de courbure, Ajout, Suppression, Conversion de point) | Tracer un « O » en 4 clics, convertir un angle en courbe | Fait (fusionné dans `main`) |
-| 3 | Export `.otf`, import et modification d'une police existante, accents composés, réglages globaux | Relire le `.otf` exporté ; l'installer | Fait (en attente de validation) |
-| 4 | Studio 1 : moteur de mise en page, Caractère, Paragraphe, sélecteur de couleur | Vitest : approche, crénage, justification, retraits | À faire |
+| 3 | Export `.otf`, import et modification d'une police existante, accents composés, réglages globaux | Relire le `.otf` exporté ; l'installer | Fait (fusionné dans `main`) |
+| 4 | Studio 1 : moteur de mise en page, Caractère, Paragraphe, sélecteur de couleur | Vitest : approche, crénage, justification, retraits | Fait (en attente de validation) |
 | 5 | Studio 2 : texte sur tracé, effets, conversion en contours, exports SVG/PNG | Le SVG ne contient que des `<path>` | À faire |
 | 6 | Crénage par paires, déploiement Vercel, README final | Lien public testé sur téléphone | À faire |
 
@@ -144,3 +157,5 @@ Limite : opentype.js 2.0 n'écrit pas les tables de crénage ; les paires resten
 - **2026-11-07** : étape 2 bis livrée sur la branche `etape-2bis-plume` : bouton Plume groupé (clic long ou clic droit), Plume de courbure, Ajout et Suppression de point d'ancrage (+ et −), Conversion de point, Maj+P pour passer d'un outil à l'autre.
 - **2026-11-07** : étape 2 bis validée et fusionnée dans `main`. Début de l'étape 3 (polices), détail en section 3 ter.
 - **2026-11-07** : étape 3 livrée sur la branche `etape-3-polices` : export `.otf` validé avec fontTools, accents automatiques (groupe « Signes »), import TTF/OTF/WOFF avec licence et crénage conservé, réglages globaux (inclinaison, approche) annulables d'un coup. Les guides de l'éditeur s'adaptent aux polices en 2048 unités/em.
+- **2026-11-07** : étape 3 validée et fusionnée dans `main`. Début de l'étape 4 (Studio texte, partie 1), détail en section 3 quater.
+- **2026-11-07** : étape 4 livrée sur la branche `etape-4-studio` : documents texte (Accueil, Fichier › Nouveau document texte), outil Texte (point et paragraphe), panneaux Caractère, Paragraphe et Couleur (sélecteur standard, X / D, pipette, nuancier), espace de travail « Texte », annulation regroupée par réglage, sauvegarde sur l'appareil. Testé avec DejaVu Sans et DejaVu Serif importées.

@@ -1,8 +1,9 @@
 import type { DockviewApi } from 'dockview-react'
 import { createContext, useContext } from 'react'
 import type { FontProject, Glyph } from '../model/types'
+import type { StudioDoc } from '../text/types'
 
-export type Tool = 'pen' | 'curvature' | 'addPoint' | 'deletePoint' | 'convert' | 'brush' | 'select' | 'hand' | 'zoom'
+export type Tool = 'pen' | 'curvature' | 'addPoint' | 'deletePoint' | 'convert' | 'brush' | 'select' | 'text' | 'hand' | 'zoom'
 
 /** Famille d'outils Plume (un seul bouton dans la barre d'outils, comme dans Photoshop). */
 export const PEN_TOOLS: Tool[] = ['pen', 'curvature', 'addPoint', 'deletePoint', 'convert']
@@ -83,6 +84,22 @@ export interface WorkspaceValue {
   /** Points sélectionnés (clés « contour:point ») du glyphe en cours. */
   selection: (projectId: string) => string[]
   setSelection: (projectId: string, keys: string[]) => void
+  /** Documents texte (Studio) chargés : `null` = introuvable ; clé absente = en cours de chargement. */
+  studios: Record<string, StudioDoc | null>
+  loadStudio: (id: string) => void
+  activeStudioId: string | null
+  /** Type du document actif : police, document texte, ou aucun. */
+  activeKind: 'font' | 'studio' | null
+  setActiveDoc: (kind: 'font' | 'studio' | null, id: string | null) => void
+  createStudio: (name: string, fontId: string | null) => Promise<void>
+  openStudio: (id: string, name: string) => void
+  /** Modifie un document texte (enregistré sur l'appareil ; changements rapprochés = une seule annulation). */
+  updateStudio: (id: string, change: (d: StudioDoc) => StudioDoc) => void
+  undoStudio: (id: string) => void
+  redoStudio: (id: string) => void
+  canUndoStudio: (id: string) => boolean
+  canRedoStudio: (id: string) => boolean
+  onStudioDeleted: (id: string) => void
 }
 
 export const WorkspaceContext = createContext<WorkspaceValue | null>(null)

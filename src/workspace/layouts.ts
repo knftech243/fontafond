@@ -7,27 +7,34 @@ import type { SerializedDockview } from 'dockview-react'
 
 /** Composants de panneau connus (clés de `components` dans Workspace.tsx). */
 export const DOCUMENT_COMPONENT = 'document'
+export const STUDIO_COMPONENT = 'studio'
 export const HOME_COMPONENT = 'home'
 export const HOME_PANEL_ID = 'home'
 export const HOME_TITLE = 'Accueil'
 
-export type ToolPanelId = 'glyphs' | 'glyph' | 'metrics' | 'preview'
+export type ToolPanelId = 'glyphs' | 'glyph' | 'metrics' | 'preview' | 'character' | 'paragraph' | 'color'
 
 export const TOOL_PANELS: { id: ToolPanelId; title: string }[] = [
   { id: 'glyphs', title: 'Glyphes' },
   { id: 'glyph', title: 'Glyphe sélectionné' },
   { id: 'metrics', title: 'Métriques' },
   { id: 'preview', title: 'Aperçu' },
+  { id: 'character', title: 'Caractère' },
+  { id: 'paragraph', title: 'Paragraphe' },
+  { id: 'color', title: 'Couleur' },
 ]
 
-export type PresetId = 'essentiel' | 'dessin'
+export type PresetId = 'essentiel' | 'dessin' | 'texte'
 
 export const PRESETS: { id: PresetId; name: string }[] = [
   { id: 'essentiel', name: 'Essentiel' },
   { id: 'dessin', name: 'Dessin' },
+  { id: 'texte', name: 'Texte' },
 ]
 
 export const documentPanelId = (projectId: string) => `doc:${projectId}`
+export const studioPanelId = (studioId: string) => `studio:${studioId}`
+export const studioIdFromPanelId = (panelId: string) => (panelId.startsWith('studio:') ? panelId.slice(7) : null)
 export const projectIdFromPanelId = (panelId: string) => (panelId.startsWith('doc:') ? panelId.slice(4) : null)
 
 const CURRENT_KEY = 'fontafond.layout.v1'
@@ -151,7 +158,7 @@ export function stripDocuments(layout: SerializedDockview): SerializedDockview {
   const copy = JSON.parse(JSON.stringify(layout)) as SerializedDockview
   const isDoc = (id: string) => {
     const p = copy.panels[id]
-    return !p || p.contentComponent === DOCUMENT_COMPONENT || p.contentComponent === HOME_COMPONENT
+    return !p || p.contentComponent === DOCUMENT_COMPONENT || p.contentComponent === STUDIO_COMPONENT || p.contentComponent === HOME_COMPONENT
   }
   let homePlaced = false
 

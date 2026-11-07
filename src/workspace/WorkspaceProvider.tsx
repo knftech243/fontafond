@@ -4,7 +4,10 @@ import { createProject } from '../model/project'
 import { getProject, saveProject } from '../model/storage'
 import { emptyHistory, record, redo as redoHistory, single, undo as undoHistory, type History } from '../editor/history'
 import type { FontProject, Glyph } from '../model/types'
-import { DOCUMENT_COMPONENT, HOME_PANEL_ID, documentPanelId } from './layouts'
+import { DOCUMENT_COMPONENT, HOME_PANEL_ID, STUDIO_COMPONENT, documentPanelId, studioPanelId } from './layouts'
+import { getStudio, saveStudio } from '../text/studioStorage'
+import { createStudio as newStudioDoc, type StudioDoc } from '../text/types'
+import { EMPTY_HISTORY, pushChange, type StudioHistory } from '../text/history'
 import { documentPosition } from './positions'
 import {
   DEFAULT_TOOL_OPTIONS,
@@ -35,14 +38,22 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [toolOptions, setToolOptionsState] = useState<ToolOptions>(DEFAULT_TOOL_OPTIONS)
   const [histories, setHistories] = useState<Record<string, History>>({})
   const [selections, setSelections] = useState<Record<string, { char: string; keys: string[] }>>({})
+  const [studios, setStudios] = useState<Record<string, StudioDoc | null>>({})
+  const loadingStudios = useRef(new Set<string>())
+  const [activeStudioId, setActiveStudioId] = useState<string | null>(null)
+  const [activeKind, setActiveKind] = useState<'font' | 'studio' | null>(null)
+  const studioTimers = useRef(new Map<string, number>())
+  const [studioHistory, setStudioHistory] = useState<Record<string, StudioHistory>>({})
 
   useEffect(() => {
     const onResize = () => setNarrow(window.innerWidth < NARROW)
     window.addEventListener('resize', onResize)
     const pending = timers.current
+    const pendingStudios = studioTimers.current
     return () => {
       window.removeEventListener('resize', onResize)
       pending.forEach((t) => window.clearTimeout(t))
+      pendingStudios.forEach((t) => window.clearTimeout(t))
     }
   }, [])
 
@@ -59,6 +70,64 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       () => setProjects((s) => ({ ...s, [id]: null })),
     )
   }, [])
+
+  const loadStudio = useCallback((id: string) => {
+    if (loadingStudios.current.has(id)) return
+    loadingStudios.current.add(id)
+    getStudio(id).then(
+      (d) => setStudios((s) => ({ ...s, [id]: d ?? null })),
+      () => setStudios((s) => ({ ...s, [id]: null })),
+    )
+  }, [])
+
+  const openStudio = useCallback(
+    (id: string, name: string) => {
+      const a = apiRef.current
+      if (!a) return
+      loadStudio(id)
+      const panelId = studioPanelId(id)
+      const existing = a.getPanel(panelId)
+      if (existing) {
+        existing.api.setActive()
+        return
+      }
+      const position = documentPosition(a)
+      a.addPanel({ id: panelId, component: STUDIO_COMPONENT, title: name, params: { studioId: id }, ...(position ? { position } : {}) })
+      a.getPanel(HOME_PANEL_ID)?.api.close()
+    },
+    [loadStudio],
+  )
+
+  function persistStudio(id: string, doc: StudioDoc) {
+    setSaveState('saving')
+    window.clearTimeout(studioTimers.current.get(id))
+    studioTimers.current.set(
+      id,
+      window.setTimeout(() => {
+        saveStudio(doc).then(
+          () => setSaveState('saved'),
+          () => setSaveState('error'),
+        )
+      }, 400),
+    )
+  }
+
+  function travelStudio(id: string, dir: 'undo' | 'redo') {
+    const cur = studios[id]
+    const h = studioHistory[id]
+    if (!cur || !h) return
+    const from = dir === 'undo' ? h.past : h.future
+    const target = from[from.length - 1]
+    if (!target) return
+    const rest = from.slice(0, -1)
+    setStudioHistory((all) => ({
+      ...all,
+      [id]: dir === 'undo' ? { past: rest, future: [...h.future, cur], at: 0, sig: '' } : { past: [...h.past, cur], future: rest, at: 0, sig: '' },
+    }))
+    setStudios((s) => ({ ...s, [id]: target }))
+    if (target.name !== cur.name) apiRef.current?.getPanel(studioPanelId(id))?.api.setTitle(target.name)
+    persistStudio(id, target)
+  }
 
   const openProject = useCallback(
     (id: string, name: string) => {
@@ -213,6 +282,50 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     selection: (id) => {
       const s = selections[id]
       return s && s.char === selectedChar(id) ? s.keys : []
+    },
+    studios,
+    loadStudio,
+    activeStudioId,
+    activeKind,
+    setActiveDoc: (kind, id) => {
+      setActiveKind(kind)
+      if (kind === 'studio') setActiveStudioId(id)
+      if (kind === 'font') setActiveProjectId(id)
+    },
+    createStudio: async (name, fontId) => {
+      const d = await saveStudio(newStudioDoc(name, fontId))
+      loadingStudios.current.add(d.id)
+      setStudios((s) => ({ ...s, [d.id]: d }))
+      setListVersion((v) => v + 1)
+      openStudio(d.id, d.name)
+    },
+    openStudio,
+    updateStudio: (id, change) => {
+      const cur = studios[id]
+      if (!cur) return
+      const next = change(cur)
+      if (next === cur) return
+      const now = Date.now()
+      // Changements rapprochés (frappe, glisser d'un curseur) = une seule étape d'annulation.
+      setStudioHistory((all) => {
+        return { ...all, [id]: pushChange(all[id] ?? EMPTY_HISTORY, cur, next, now) }
+      })
+      setStudios((s) => ({ ...s, [id]: next }))
+      if (next.name !== cur.name) apiRef.current?.getPanel(studioPanelId(id))?.api.setTitle(next.name)
+      persistStudio(id, next)
+    },
+    undoStudio: (id) => travelStudio(id, 'undo'),
+    redoStudio: (id) => travelStudio(id, 'redo'),
+    canUndoStudio: (id) => (studioHistory[id]?.past.length ?? 0) > 0,
+    canRedoStudio: (id) => (studioHistory[id]?.future.length ?? 0) > 0,
+    onStudioDeleted: (id) => {
+      apiRef.current?.getPanel(studioPanelId(id))?.api.close()
+      loadingStudios.current.delete(id)
+      setStudios((s) => {
+        const next = { ...s }
+        delete next[id]
+        return next
+      })
     },
     setSelection: (id, keys) => setSelections((s) => ({ ...s, [id]: { char: selectedChar(id), keys } })),
   }

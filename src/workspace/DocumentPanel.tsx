@@ -1,12 +1,18 @@
 import type { IDockviewPanelProps } from 'dockview-react'
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
+import { EditorLayer } from '../editor/EditorLayer'
 import { GlyphView } from '../editor/GlyphView'
-import { useWorkspace, zoomAt, FIT_VIEW } from './workspaceContext'
+import { useGlyphEditor } from '../editor/useGlyphEditor'
+import { createEmptyGlyph } from '../model/project'
+import { FIT_VIEW, useWorkspace, zoomAt } from './workspaceContext'
 
 const isTyping = (t: EventTarget | null) =>
   t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))
 
-/** Fenêtre de document : la lettre en cours sur le plan de travail, avec zoom et déplacement. */
+const PAD = 160
+const DRAW_TOOLS = new Set(['pen', 'brush', 'select'])
+
+/** Fenêtre de document : la lettre en cours sur le plan de travail, avec outils de dessin, zoom et déplacement. */
 export function DocumentPanel(props: IDockviewPanelProps<{ projectId: string }>) {
   const ws = useWorkspace()
   const { projectId } = props.params
@@ -14,10 +20,11 @@ export function DocumentPanel(props: IDockviewPanelProps<{ projectId: string }>)
   const project = ws.projects[projectId]
   const view = ws.view(projectId)
   const stageRef = useRef<HTMLDivElement>(null)
+  const svgRef = useRef<SVGSVGElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
   const [space, setSpace] = useState(false)
-  const drag = useRef<{ x: number; y: number; vx: number; vy: number } | null>(null)
-  const [dragging, setDragging] = useState(false)
+  const pan = useRef<{ x: number; y: number; vx: number; vy: number } | null>(null)
+  const [panning, setPanning] = useState(false)
 
   useEffect(() => loadProject(projectId), [loadProject, projectId])
 
@@ -45,7 +52,11 @@ export function DocumentPanel(props: IDockviewPanelProps<{ projectId: string }>)
     }
   }, [])
 
-  // Ctrl + molette = zoom autour du curseur ; molette seule = déplacement (comme dans les logiciels de création).
+  // Ctrl + molette = zoom autour du curseur ; molette seule = déplacement.
+  const setViewRef = useRef(ws.setView)
+  useEffect(() => {
+    setViewRef.current = ws.setView
+  })
   useEffect(() => {
     const el = stageRef.current
     if (!el) return
@@ -54,15 +65,44 @@ export function DocumentPanel(props: IDockviewPanelProps<{ projectId: string }>)
       const r = el.getBoundingClientRect()
       const px = e.clientX - r.left - r.width / 2
       const py = e.clientY - r.top - r.height / 2
-      if (e.ctrlKey || e.metaKey) ws.setView(projectId, (v) => zoomAt(v, Math.exp(-e.deltaY * 0.0025), px, py))
-      else ws.setView(projectId, (v) => ({ ...v, x: v.x - e.deltaX, y: v.y - e.deltaY }))
+      if (e.ctrlKey || e.metaKey) setViewRef.current(projectId, (v) => zoomAt(v, Math.exp(-e.deltaY * 0.0025), px, py))
+      else setViewRef.current(projectId, (v) => ({ ...v, x: v.x - e.deltaX, y: v.y - e.deltaY }))
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
-  }, [ws, projectId, project])
+  }, [projectId, project])
+
+  const char = ws.selectedChar(projectId)
+  const glyph = (project && (project.glyphs[char] ?? project.glyphs.A)) || createEmptyGlyph(char)
+  const metrics = project?.metrics
+  const vbW = glyph.advanceWidth + PAD * 2
+  const vbH = metrics ? metrics.ascender - metrics.descender + PAD * 2 : 1
+  const aspect = vbW / vbH
+  const baseW = Math.max(120, Math.min(size.w * 0.9, size.h * 0.9 * aspect))
+  const pxPerUnit = (baseW * view.zoom) / vbW
+  const panMode = ws.tool === 'hand' || space
+  const editing = !!project && DRAW_TOOLS.has(ws.tool) && !space
+
+  const editor = useGlyphEditor({ projectId, char, glyph, svgRef, pxPerUnit, enabled: editing })
+
+  // Raccourcis d'édition du document actif (Échap, Entrée, Suppr, flèches).
+  const keyRef = useRef(editor.onKeyDown)
+  useEffect(() => {
+    keyRef.current = editor.onKeyDown
+  })
+  const isActive = ws.activeProjectId === projectId
+  useEffect(() => {
+    if (!isActive) return
+    const on = (e: KeyboardEvent) => {
+      if (isTyping(e.target) || e.ctrlKey || e.metaKey) return
+      if (keyRef.current(e)) e.preventDefault()
+    }
+    window.addEventListener('keydown', on)
+    return () => window.removeEventListener('keydown', on)
+  }, [isActive])
 
   if (project === undefined) return <p className="fd-empty">Chargement de la police…</p>
-  if (project === null)
+  if (project === null || !metrics)
     return (
       <div className="fd-empty">
         <p>Cette police est introuvable : elle a peut-être été supprimée, ou créée sur un autre appareil.</p>
@@ -72,14 +112,6 @@ export function DocumentPanel(props: IDockviewPanelProps<{ projectId: string }>)
       </div>
     )
 
-  const glyph = project.glyphs[ws.selectedChar(projectId)] ?? project.glyphs.A
-  const pad = 160
-  const vbW = glyph.advanceWidth + pad * 2
-  const vbH = project.metrics.ascender - project.metrics.descender + pad * 2
-  const aspect = vbW / vbH
-  const baseW = Math.max(120, Math.min(size.w * 0.9, size.h * 0.9 * aspect))
-  const panMode = ws.tool === 'hand' || space
-
   const point = (e: RPointerEvent) => {
     const r = stageRef.current!.getBoundingClientRect()
     return { px: e.clientX - r.left - r.width / 2, py: e.clientY - r.top - r.height / 2 }
@@ -88,24 +120,33 @@ export function DocumentPanel(props: IDockviewPanelProps<{ projectId: string }>)
   const onPointerDown = (e: RPointerEvent<HTMLDivElement>) => {
     if (panMode || e.button === 1) {
       e.currentTarget.setPointerCapture(e.pointerId)
-      drag.current = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y }
-      setDragging(true)
+      pan.current = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y }
+      setPanning(true)
     } else if (ws.tool === 'zoom' && e.button === 0) {
       const { px, py } = point(e)
       ws.setView(projectId, (v) => zoomAt(v, e.altKey ? 1 / 1.5 : 1.5, px, py))
+    } else {
+      editor.onPointerDown(e)
     }
   }
   const onPointerMove = (e: RPointerEvent<HTMLDivElement>) => {
-    const d = drag.current
-    if (!d) return
-    ws.setView(projectId, (v) => ({ ...v, x: d.vx + e.clientX - d.x, y: d.vy + e.clientY - d.y }))
+    const d = pan.current
+    if (d) {
+      ws.setView(projectId, (v) => ({ ...v, x: d.vx + e.clientX - d.x, y: d.vy + e.clientY - d.y }))
+      return
+    }
+    editor.onPointerMove(e)
   }
-  const endDrag = () => {
-    drag.current = null
-    setDragging(false)
+  const onPointerUp = (e: RPointerEvent<HTMLDivElement>) => {
+    if (pan.current) {
+      pan.current = null
+      setPanning(false)
+      return
+    }
+    editor.onPointerUp(e)
   }
 
-  const cursor = panMode ? (dragging ? 'grabbing' : 'grab') : ws.tool === 'zoom' ? 'zoom-in' : 'default'
+  const cursor = panMode ? (panning ? 'grabbing' : 'grab') : ws.tool === 'zoom' ? 'zoom-in' : editor.cursor
   const step = (f: number) => ws.setView(projectId, (v) => zoomAt(v, f))
 
   return (
@@ -114,16 +155,32 @@ export function DocumentPanel(props: IDockviewPanelProps<{ projectId: string }>)
         ref={stageRef}
         className="fd-doc-stage"
         style={{ cursor }}
+        data-testid="plan-de-travail"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
       >
         <div
           className="fd-doc-content"
           style={{ width: baseW, transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}
         >
-          <GlyphView glyph={glyph} metrics={project.metrics} />
+          <GlyphView
+            glyph={glyph}
+            metrics={metrics}
+            svgRef={svgRef}
+            template={ws.toolOptions.template}
+            overlay={
+              <EditorLayer
+                glyph={glyph}
+                tool={ws.tool}
+                options={ws.toolOptions}
+                selection={ws.selection(projectId)}
+                pxPerUnit={pxPerUnit}
+                state={editor.render}
+              />
+            }
+          />
         </div>
       </div>
       <div className="fd-zoombar" role="group" aria-label="Zoom">

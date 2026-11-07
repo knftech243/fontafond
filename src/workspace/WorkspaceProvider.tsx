@@ -2,10 +2,20 @@ import type { DockviewApi } from 'dockview-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createProject } from '../model/project'
 import { getProject, saveProject } from '../model/storage'
-import type { FontProject } from '../model/types'
+import { emptyHistory, record, redo as redoHistory, undo as undoHistory, type History } from '../editor/history'
+import type { FontProject, Glyph } from '../model/types'
 import { DOCUMENT_COMPONENT, HOME_PANEL_ID, documentPanelId } from './layouts'
 import { documentPosition } from './positions'
-import { FIT_VIEW, WorkspaceContext, type SaveState, type Tool, type ViewState, type WorkspaceValue } from './workspaceContext'
+import {
+  DEFAULT_TOOL_OPTIONS,
+  FIT_VIEW,
+  WorkspaceContext,
+  type SaveState,
+  type Tool,
+  type ToolOptions,
+  type ViewState,
+  type WorkspaceValue,
+} from './workspaceContext'
 
 const NARROW = 860
 
@@ -22,6 +32,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [tool, setTool] = useState<Tool>('hand')
   const [views, setViews] = useState<Record<string, ViewState>>({})
   const [narrow, setNarrow] = useState(() => window.innerWidth < NARROW)
+  const [toolOptions, setToolOptionsState] = useState<ToolOptions>(DEFAULT_TOOL_OPTIONS)
+  const [histories, setHistories] = useState<Record<string, History>>({})
+  const [selections, setSelections] = useState<Record<string, { char: string; keys: string[] }>>({})
 
   useEffect(() => {
     const onResize = () => setNarrow(window.innerWidth < NARROW)
@@ -71,6 +84,47 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     [loadProject],
   )
 
+  function updateProject(id: string, change: (p: FontProject) => FontProject) {
+    const cur = projects[id]
+    if (!cur) return
+    const next = change(cur)
+    setProjects((s) => ({ ...s, [id]: next }))
+    if (next.name !== cur.name) apiRef.current?.getPanel(documentPanelId(id))?.api.setTitle(next.name)
+    setSaveState('saving')
+    window.clearTimeout(timers.current.get(id))
+    timers.current.set(
+      id,
+      window.setTimeout(() => {
+        saveProject(next).then(
+          () => setSaveState('saved'),
+          () => setSaveState('error'),
+        )
+      }, 400),
+    )
+  }
+
+  const selectedChar = (id: string) => selected[id] ?? 'A'
+
+  function putGlyph(id: string, char: string, glyph: Glyph) {
+    updateProject(id, (p) => ({ ...p, glyphs: { ...p.glyphs, [char]: { ...glyph, updatedAt: Date.now() } } }))
+  }
+
+  function recordHistory(id: string, char: string, before: Glyph) {
+    setHistories((h) => ({ ...h, [id]: record(h[id] ?? emptyHistory(), { char, glyph: before }) }))
+  }
+
+  function travel(id: string, dir: 'undo' | 'redo') {
+    const p = projects[id]
+    if (!p) return
+    const h = histories[id] ?? emptyHistory()
+    const res = (dir === 'undo' ? undoHistory : redoHistory)(h, (c) => p.glyphs[c])
+    if (!res) return
+    setHistories((all) => ({ ...all, [id]: res.history }))
+    putGlyph(id, res.restore.char, res.restore.glyph)
+    setSelected((s) => ({ ...s, [id]: res.restore.char }))
+    setSelections((s) => ({ ...s, [id]: { char: res.restore.char, keys: [] } }))
+  }
+
   const value: WorkspaceValue = {
     api,
     setApi,
@@ -78,27 +132,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     loadProject,
     activeProjectId,
     setActiveProjectId,
-    selectedChar: (id) => selected[id] ?? 'A',
-    selectChar: (id, char) => setSelected((s) => ({ ...s, [id]: char })),
-    saveState,
-    updateProject: (id, change) => {
-      const cur = projects[id]
-      if (!cur) return
-      const next = change(cur)
-      setProjects((s) => ({ ...s, [id]: next }))
-      if (next.name !== cur.name) apiRef.current?.getPanel(documentPanelId(id))?.api.setTitle(next.name)
-      setSaveState('saving')
-      window.clearTimeout(timers.current.get(id))
-      timers.current.set(
-        id,
-        window.setTimeout(() => {
-          saveProject(next).then(
-            () => setSaveState('saved'),
-            () => setSaveState('error'),
-          )
-        }, 400),
-      )
+    selectedChar,
+    selectChar: (id, char) => {
+      setSelected((s) => ({ ...s, [id]: char }))
+      setSelections((s) => ({ ...s, [id]: { char, keys: [] } }))
     },
+    saveState,
+    updateProject,
     openProject,
     createAndOpen: async (name) => {
       const p = await saveProject(createProject(name))
@@ -128,6 +168,26 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     view: (id) => views[id] ?? FIT_VIEW,
     setView: (id, change) => setViews((s) => ({ ...s, [id]: change(s[id] ?? FIT_VIEW) })),
     narrow,
+    toolOptions,
+    setToolOptions: (patch) => setToolOptionsState((o) => ({ ...o, ...patch })),
+    editGlyph: (id, char, change, rec = true) => {
+      const g = projects[id]?.glyphs[char]
+      if (!g) return
+      const next = change(g)
+      if (next === g) return
+      if (rec) recordHistory(id, char, g)
+      putGlyph(id, char, next)
+    },
+    recordHistory,
+    undo: (id) => travel(id, 'undo'),
+    redo: (id) => travel(id, 'redo'),
+    canUndo: (id) => (histories[id]?.past.length ?? 0) > 0,
+    canRedo: (id) => (histories[id]?.future.length ?? 0) > 0,
+    selection: (id) => {
+      const s = selections[id]
+      return s && s.char === selectedChar(id) ? s.keys : []
+    },
+    setSelection: (id, keys) => setSelections((s) => ({ ...s, [id]: { char: selectedChar(id), keys } })),
   }
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>

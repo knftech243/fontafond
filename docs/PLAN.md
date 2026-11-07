@@ -72,7 +72,7 @@ Navigation : plus d'adresses par page. Tout se passe dans l'espace de travail (`
 src/
   model/   types.ts, defaultCharset.ts, project.ts, storage.ts
   font/    path.ts (contours → SVG) ; à venir : toOpentype.ts, fromOpentype.ts, composites.ts, globalAdjust.ts
-  editor/  GlyphGrid.tsx, GlyphView.tsx ; à venir : outils pen/brush/select
+  editor/  GlyphGrid.tsx, GlyphView.tsx, EditorOverlay.tsx (outils), geometry.ts, history.ts, ToolOptions.tsx
   text/    à venir : layout.ts, onPath.ts, effects.ts, outline.ts, panneaux
   workspace/ Workspace.tsx (dockview), WorkspaceContext.tsx, layouts.ts, panels.tsx, DocumentPanel.tsx
   ui/      AppShell.tsx, MenuBar.tsx, Dialog.tsx, Icon.tsx ; à venir : ColorPicker/, GradientEditor, NumberField, CommandPalette
@@ -80,14 +80,26 @@ src/
   theme/   tokens.css (+ thèmes), app.css, dockview.css, appearance.ts
 ```
 
+## 3 bis. Éditeur de glyphe (étape 2)
+
+| Outil / fonction | Comportement |
+|---|---|
+| **Plume (P)** | Clic = point d'angle ; clic-glisser = point courbe avec poignées symétriques ; clic sur le premier point = ferme le contour ; Échap ou Entrée = ferme le contour s'il a au moins 3 points, sinon l'abandonne. |
+| **Pinceau (B)** | Trait à main levée (souris, doigt, stylet) transformé en forme pleine (perfect-freehand), simplifié, puis ajouté comme contour. Options : épaisseur (10 à 200 unités), lissage, pression du stylet. |
+| **Sélection (V)** | Clic sur un point (Maj = ajouter), cadre de sélection, clic dans une forme = tout le contour ; glisser pour déplacer (les poignées suivent leur point ; sur un point courbe, la poignée opposée reste alignée, Alt pour les séparer) ; flèches = 1 unité (Maj = 10) ; Suppr = supprimer (un contour de moins de 3 points disparaît). |
+| **Chasse et approches** | Poignée jaune de chasse à tirer avec la Sélection ; panneau Glyphe : chasse, approche gauche et droite (calculées depuis la boîte englobante), modifiables. |
+| **Annuler / Rétablir** | Ctrl+Z, Ctrl+Maj+Z, Ctrl+Y ; historique par police, 100 pas, une étape par geste terminé. Menu **Édition** : Annuler, Rétablir, Tout sélectionner, Supprimer la sélection, Effacer le glyphe. |
+| **Options** | Aimanter à la grille (10 unités), afficher les poignées, lettre modèle grise (pour décalquer), réglages du pinceau. |
+| **Panneau Aperçu** | Mot test modifiable dessiné avec les glyphes de la police, en direct. |
+
 ## 4. Étapes
 
 | # | Contenu | Test | État |
 |---|---|---|---|
 | 0 | Maquette : palette, sélecteur de couleur, panneaux, texte sur tracé, conversion | Validation visuelle | Fait |
 | 1 | Squelette, thème, modèle, stockage, « Mes polices », grille des glyphes, métriques | Un projet survit au rechargement | Fait |
-| 1 bis | Espace de travail modulable : interface fixe, menus, onglets de documents, panneaux repliables et flottants, espaces de travail, apparence, zoom et déplacement | Aucun défilement de page ; disposition conservée au rechargement | Fait |
-| 2 | Éditeur : Plume, Pinceau, Sélection, chasse à la souris, annuler/rétablir | Dessiner un « A » et un « a » | À faire |
+| 1 bis | Espace de travail modulable : interface fixe, menus, onglets de documents, panneaux repliables et flottants, espaces de travail, apparence, zoom et déplacement | Aucun défilement de page ; disposition conservée au rechargement | Fait (fusionné dans `main`) |
+| 2 | Éditeur : Plume, Pinceau, Sélection, chasse à la souris, approches, annuler/rétablir, menu Édition, panneau Aperçu | Dessiner un « A » et un « a » | Fait (en attente de validation) |
 | 3 | Export `.otf`, import et modification d'une police existante, accents composés, réglages globaux | Relire le `.otf` exporté ; l'installer | À faire |
 | 4 | Studio 1 : moteur de mise en page, Caractère, Paragraphe, sélecteur de couleur | Vitest : approche, crénage, justification, retraits | À faire |
 | 5 | Studio 2 : texte sur tracé, effets, conversion en contours, exports SVG/PNG | Le SVG ne contient que des `<path>` | À faire |
@@ -108,3 +120,5 @@ src/
 - **2026-11-06** : création du plan. Périmètre V1, thème sombre sarcelle sur la palette de la charte (aucun violet), sélecteur de couleur standard, studio texte (Caractère, Paragraphe, texte sur tracé, contour, dégradé/incrustation, conversion en contours), modification de polices existantes. Nom du projet : Fontafond (dépôt `knftech243/fontafond`).
 - **2026-11-06** : étape 1 livrée (squelette Vite + React + TS, thème, modèle de données, stockage IndexedDB, écran « Mes polices », éditeur avec grille des glyphes, chasse et métriques modifiables).
 - **2026-11-06** : demande de Franck : fenêtres modifiables comme dans Photoshop (redimensionner, replier, flottantes, espaces de travail), fenêtre de document et apparence personnalisables, interface fixe sans barre de navigation ni défilement de page. Ajout de l'étape 1 bis et de dockview.
+- **2026-11-07** : étape 1 bis validée par Franck et fusionnée dans `main`. Début de l'étape 2 (éditeur de glyphe), détail en section 3 bis.
+- **2026-11-07** : étape 2 livrée sur la branche `etape-2-editeur` : Plume (angles et courbes, sens des contreformes automatique), Pinceau (perfect-freehand), Sélection (points, poignées alignées, cadre, flèches, suppression), chasse à la souris, approches, annuler/rétablir, menu Édition (dont « Inverser le sens du contour »), panneau Aperçu. Correctif : la police active est retrouvée au rechargement même si un panneau avait le focus.

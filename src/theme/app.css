@@ -1028,3 +1028,46 @@
     display: none;
   }
 }
+
+/* ---------- Options des outils et aperçu ---------- */
+.fd-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fd-text-soft);
+  flex-shrink: 0;
+}
+
+.fd-opt input[type='checkbox'],
+.fd-opt input[type='range'] {
+  accent-color: var(--fd-blue);
+}
+
+.fd-opt input[type='range'] {
+  width: 96px;
+}
+
+.fd-opt-value {
+  min-width: 34px;
+  color: var(--fd-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.fd-preview {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: var(--fd-radius);
+  background: var(--fd-paper);
+}
+
+.fd-preview svg {
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.fd-field input:disabled {
+  opacity: 0.55;
+}

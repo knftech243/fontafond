@@ -1,6 +1,6 @@
 import type { DockviewApi } from 'dockview-react'
 import { createContext, useContext } from 'react'
-import type { FontProject } from '../model/types'
+import type { FontProject, Glyph } from '../model/types'
 
 export type Tool = 'pen' | 'brush' | 'select' | 'hand' | 'zoom'
 export type SaveState = 'saved' | 'saving' | 'error'
@@ -10,6 +10,25 @@ export interface ViewState {
   zoom: number
   x: number
   y: number
+}
+
+/** Réglages des outils de dessin (barre d'options). */
+export interface ToolOptions {
+  snap: boolean
+  showHandles: boolean
+  template: boolean
+  brushSize: number
+  smoothing: number
+  pressure: boolean
+}
+
+export const DEFAULT_TOOL_OPTIONS: ToolOptions = {
+  snap: false,
+  showHandles: true,
+  template: true,
+  brushSize: 70,
+  smoothing: 0.5,
+  pressure: true,
 }
 
 export const FIT_VIEW: ViewState = { zoom: 1, x: 0, y: 0 }
@@ -43,6 +62,19 @@ export interface WorkspaceValue {
   view: (projectId: string) => ViewState
   setView: (projectId: string, change: (v: ViewState) => ViewState) => void
   narrow: boolean
+  toolOptions: ToolOptions
+  setToolOptions: (patch: Partial<ToolOptions>) => void
+  /** Modifie le glyphe en cours ; `record` = une étape d'historique (sinon, geste en cours). */
+  editGlyph: (projectId: string, char: string, change: (g: Glyph) => Glyph, record?: boolean) => void
+  /** Termine un geste (glisser) : mémorise l'état d'avant dans l'historique. */
+  recordHistory: (projectId: string, char: string, before: Glyph) => void
+  undo: (projectId: string) => void
+  redo: (projectId: string) => void
+  canUndo: (projectId: string) => boolean
+  canRedo: (projectId: string) => boolean
+  /** Points sélectionnés (clés « contour:point ») du glyphe en cours. */
+  selection: (projectId: string) => string[]
+  setSelection: (projectId: string, keys: string[]) => void
 }
 
 export const WorkspaceContext = createContext<WorkspaceValue | null>(null)

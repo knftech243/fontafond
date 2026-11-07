@@ -1,3 +1,4 @@
+import type { ReactNode, Ref } from 'react'
 import { contoursToPathData } from '../font/path'
 import type { FontMetrics, Glyph } from '../model/types'
 
@@ -17,9 +18,22 @@ const GUIDES: GuideDef[] = [
   { key: 'descender', label: 'Descendante', color: '#8aa5a5', labelColor: '#4d6566', dashed: true },
 ]
 
+interface GlyphViewProps {
+  glyph: Glyph
+  metrics: FontMetrics
+  /** Calque d'édition (points, poignées…), dessiné en unités de police, y vers le haut. */
+  overlay?: ReactNode
+  svgRef?: Ref<SVGSVGElement>
+  /** Lettre modèle grise en fond, pour décalquer. */
+  template?: boolean
+}
+
+/** Marge autour de la chasse, en unités de police (partagée avec le calque d'édition). */
+const GLYPH_PAD = 160
+
 /** Glyphe affiché sur le plan de travail, avec ses lignes guides et sa chasse. */
-export function GlyphView({ glyph, metrics }: { glyph: Glyph; metrics: FontMetrics }) {
-  const pad = 160
+export function GlyphView({ glyph, metrics, overlay, svgRef, template = true }: GlyphViewProps) {
+  const pad = GLYPH_PAD
   const adv = glyph.advanceWidth
   const top = metrics.ascender + pad
   const bottom = metrics.descender - pad
@@ -30,6 +44,7 @@ export function GlyphView({ glyph, metrics }: { glyph: Glyph; metrics: FontMetri
 
   return (
     <svg
+      ref={svgRef}
       className="fd-glyph-view"
       viewBox={`${-pad} ${-top} ${width} ${height}`}
       role="img"
@@ -71,20 +86,21 @@ export function GlyphView({ glyph, metrics }: { glyph: Glyph; metrics: FontMetri
         Chasse {adv}
       </text>
 
-      {d ? (
-        <path d={d} transform="scale(1,-1)" fill="var(--fd-ink)" fillRule="nonzero" />
-      ) : (
+      {template && (
         <text
           x={adv / 2}
           y={-metrics.capHeight / 2 + 120}
           fontSize={Math.round(metrics.capHeight * 0.9)}
           textAnchor="middle"
-          fill="#c9d6d6"
+          fill={d ? '#dfe7e7' : '#c9d6d6'}
           fontFamily="Inter, sans-serif"
+          pointerEvents="none"
         >
           {glyph.char}
         </text>
       )}
+      {d && <path d={d} transform="scale(1,-1)" fill="var(--fd-ink)" fillRule="nonzero" />}
+      {overlay && <g transform="scale(1,-1)">{overlay}</g>}
     </svg>
   )
 }

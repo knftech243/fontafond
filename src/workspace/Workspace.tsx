@@ -23,6 +23,8 @@ import { AppShell } from '../ui/AppShell'
 import { Dialog } from '../ui/Dialog'
 import { Icon, type IconName } from '../ui/Icon'
 import { MenuBar, type Menu, type MenuItem } from '../ui/MenuBar'
+import { ToolOptions } from '../editor/ToolOptions'
+import { allKeys, contoursOf, deletePoints, reverseContour } from '../editor/geometry'
 import { downloadFile, safeFileName } from '../utils/download'
 import { DocumentPanel } from './DocumentPanel'
 import {
@@ -43,7 +45,7 @@ import {
   type CustomWorkspace,
   type PresetId,
 } from './layouts'
-import { GlyphPanel, GlyphsPanel, GroupActions, HomePanel, MetricsPanel, Watermark } from './panels'
+import { GlyphPanel, GlyphsPanel, GroupActions, HomePanel, MetricsPanel, PreviewPanel, Watermark } from './panels'
 import { RESET_EVENT, documentPosition, isDocumentPanel, toolPosition } from './positions'
 import { FIT_VIEW, useWorkspace, zoomAt, type Tool } from './workspaceContext'
 
@@ -55,6 +57,7 @@ const COMPONENTS = {
   glyphs: GlyphsPanel,
   glyph: GlyphPanel,
   metrics: MetricsPanel,
+  preview: PreviewPanel,
 }
 
 /** Hauteur minimale d'un panneau : sa barre d'onglets (pour pouvoir le replier). */
@@ -64,19 +67,22 @@ const TOOL_MIN_HEIGHT = 34
 function buildPreset(api: DockviewApi, preset: PresetId, narrow: boolean) {
   api.clear()
   api.addPanel({ id: HOME_PANEL_ID, component: HOME_COMPONENT, title: HOME_TITLE })
-  const [glyphs, glyph, metrics] = TOOL_PANELS
+  const [glyphs, glyph, metrics, preview] = TOOL_PANELS
   if (narrow) {
     api.addPanel({ id: glyphs.id, component: glyphs.id, minimumHeight: TOOL_MIN_HEIGHT, title: glyphs.title, position: { referencePanel: HOME_PANEL_ID, direction: 'below' }, initialHeight: 260 })
     api.addPanel({ id: glyph.id, component: glyph.id, minimumHeight: TOOL_MIN_HEIGHT, title: glyph.title, position: { referencePanel: glyphs.id, direction: 'within' }, inactive: true })
     api.addPanel({ id: metrics.id, component: metrics.id, minimumHeight: TOOL_MIN_HEIGHT, title: metrics.title, position: { referencePanel: glyphs.id, direction: 'within' }, inactive: true })
+    api.addPanel({ id: preview.id, component: preview.id, minimumHeight: TOOL_MIN_HEIGHT, title: preview.title, position: { referencePanel: glyphs.id, direction: 'within' }, inactive: true })
   } else if (preset === 'dessin') {
     api.addPanel({ id: glyphs.id, component: glyphs.id, minimumHeight: TOOL_MIN_HEIGHT, title: glyphs.title, position: { referencePanel: HOME_PANEL_ID, direction: 'right' }, initialWidth: 300 })
     api.addPanel({ id: glyph.id, component: glyph.id, minimumHeight: TOOL_MIN_HEIGHT, title: glyph.title, position: { referencePanel: glyphs.id, direction: 'within' }, inactive: true })
     api.addPanel({ id: metrics.id, component: metrics.id, minimumHeight: TOOL_MIN_HEIGHT, title: metrics.title, position: { referencePanel: glyphs.id, direction: 'within' }, inactive: true })
+    api.addPanel({ id: preview.id, component: preview.id, minimumHeight: TOOL_MIN_HEIGHT, title: preview.title, position: { referencePanel: HOME_PANEL_ID, direction: 'below' }, initialHeight: 150 })
   } else {
     api.addPanel({ id: glyphs.id, component: glyphs.id, minimumHeight: TOOL_MIN_HEIGHT, title: glyphs.title, position: { referencePanel: HOME_PANEL_ID, direction: 'right' }, initialWidth: 340 })
     api.addPanel({ id: glyph.id, component: glyph.id, minimumHeight: TOOL_MIN_HEIGHT, title: glyph.title, position: { referencePanel: glyphs.id, direction: 'below' } })
     api.addPanel({ id: metrics.id, component: metrics.id, minimumHeight: TOOL_MIN_HEIGHT, title: metrics.title, position: { referencePanel: glyph.id, direction: 'within' }, inactive: true })
+    api.addPanel({ id: preview.id, component: preview.id, minimumHeight: TOOL_MIN_HEIGHT, title: preview.title, position: { referencePanel: glyph.id, direction: 'below' }, initialHeight: 170 })
   }
   api.getPanel(HOME_PANEL_ID)?.api.setActive()
 }
@@ -88,17 +94,13 @@ interface OpenDoc {
 }
 
 const TOOLS: { id: Tool; icon: IconName; label: string; key: string; ready: boolean }[] = [
-  { id: 'pen', icon: 'pen', label: 'Plume', key: 'P', ready: false },
-  { id: 'brush', icon: 'brush', label: 'Pinceau', key: 'B', ready: false },
-  { id: 'select', icon: 'pointer', label: 'Sélection', key: 'V', ready: false },
+  { id: 'pen', icon: 'pen', label: 'Plume', key: 'P', ready: true },
+  { id: 'brush', icon: 'brush', label: 'Pinceau', key: 'B', ready: true },
+  { id: 'select', icon: 'pointer', label: 'Sélection', key: 'V', ready: true },
   { id: 'hand', icon: 'hand', label: 'Main', key: 'H', ready: true },
   { id: 'zoom', icon: 'zoom', label: 'Zoom', key: 'Z', ready: true },
 ]
 
-const TOOL_HINTS: Partial<Record<Tool, string>> = {
-  hand: 'Main : glissez pour déplacer la vue. Molette : défiler ; Ctrl + molette : zoomer ; barre d’espace : Main temporaire.',
-  zoom: 'Zoom : cliquez pour agrandir, Alt + clic pour réduire. Ctrl + 0 : ajuster à la fenêtre.',
-}
 
 const isTyping = (t: EventTarget | null) =>
   t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))
@@ -180,10 +182,18 @@ export function Workspace() {
     }
 
     const syncPanels = () => setOpenPanels(a.panels.map((p) => p.id))
+    // Document actif : celui de l'onglet actif ; sinon (un panneau a le focus) on garde le dernier,
+    // et au chargement on prend le document visible de son groupe, ou le premier ouvert.
+    let lastDoc: string | null = null
     const syncActive = () => {
       const doc = a.activePanel && projectIdFromPanelId(a.activePanel.id)
-      if (doc) setActiveProjectId(doc)
-      else if (!a.panels.some((p) => p.id.startsWith('doc:'))) setActiveProjectId(null)
+      const docs = a.panels.filter((p) => p.id.startsWith('doc:'))
+      if (doc) lastDoc = doc
+      else if (!lastDoc || !docs.some((p) => projectIdFromPanelId(p.id) === lastDoc)) {
+        const visible = docs.find((p) => p.api.isVisible) ?? docs[0]
+        lastDoc = visible ? projectIdFromPanelId(visible.id) : null
+      }
+      setActiveProjectId(lastDoc)
     }
     let saveTimer: number | undefined
     disposables.current.push(
@@ -234,6 +244,33 @@ export function Workspace() {
   const zoomBy = (f: number) => activeId && ws.setView(activeId, (v) => zoomAt(v, f))
   const fit = () => activeId && ws.setView(activeId, () => FIT_VIEW)
 
+  const glyphCharActive = activeId ? ws.selectedChar(activeId) : null
+  const selection = activeId ? ws.selection(activeId) : []
+  const currentGlyph = project && glyphCharActive ? project.glyphs[glyphCharActive] : undefined
+  const undo = () => activeId && ws.undo(activeId)
+  const redo = () => activeId && ws.redo(activeId)
+  const selectAll = () => {
+    if (!activeId || !currentGlyph) return
+    ws.setTool('select')
+    ws.setSelection(activeId, allKeys(currentGlyph.contours))
+  }
+  const deleteSelection = () => {
+    if (!activeId || !glyphCharActive || selection.length === 0) return
+    ws.editGlyph(activeId, glyphCharActive, (g) => ({ ...g, contours: deletePoints(g.contours, selection) }))
+    ws.setSelection(activeId, [])
+  }
+  const reverseSelected = () => {
+    if (!activeId || !glyphCharActive || selection.length === 0) return
+    const idx = new Set(contoursOf(selection))
+    ws.editGlyph(activeId, glyphCharActive, (g) => ({ ...g, contours: g.contours.map((c, i) => (idx.has(i) ? reverseContour(c) : c)) }))
+    ws.setSelection(activeId, [])
+  }
+  const clearGlyph = () => {
+    if (!activeId || !glyphCharActive || !currentGlyph?.contours.length) return
+    ws.editGlyph(activeId, glyphCharActive, (g) => ({ ...g, contours: [] }))
+    ws.setSelection(activeId, [])
+  }
+
   // Raccourcis clavier globaux
   const keyRef = useRef<(e: KeyboardEvent) => void>(() => {})
   useEffect(() => {
@@ -249,8 +286,20 @@ export function Workspace() {
     } else if (mod && e.key === '0') {
       e.preventDefault()
       fit()
-    } else if (!mod && !e.altKey && (e.key === 'h' || e.key === 'H')) ws.setTool('hand')
-    else if (!mod && !e.altKey && (e.key === 'z' || e.key === 'Z')) ws.setTool('zoom')
+    } else if (mod && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+      e.preventDefault()
+      undo()
+    } else if (mod && ((e.shiftKey && (e.key === 'z' || e.key === 'Z')) || e.key === 'y' || e.key === 'Y')) {
+      e.preventDefault()
+      redo()
+    } else if (mod && (e.key === 'a' || e.key === 'A')) {
+      e.preventDefault()
+      selectAll()
+    } else if (!mod && !e.altKey) {
+      const tools: Record<string, Tool> = { h: 'hand', z: 'zoom', p: 'pen', b: 'brush', v: 'select' }
+      const t = tools[e.key.toLowerCase()]
+      if (t) ws.setTool(t)
+    }
     }
   })
   useEffect(() => {
@@ -313,6 +362,19 @@ export function Workspace() {
           onSelect: () => project && downloadFile(`${safeFileName(project.name)}.fontafond.json`, exportProjectJson(project), 'application/json'),
         },
         { type: 'item', label: 'Fermer le document', disabled: !activeId, onSelect: () => activeId && ws.closeProject(activeId) },
+      ],
+    },
+    {
+      id: 'edition',
+      label: 'Édition',
+      items: [
+        { type: 'item', label: 'Annuler', shortcut: 'Ctrl Z', disabled: !activeId || !ws.canUndo(activeId), onSelect: undo },
+        { type: 'item', label: 'Rétablir', shortcut: 'Ctrl Maj Z', disabled: !activeId || !ws.canRedo(activeId), onSelect: redo },
+        { type: 'separator' },
+        { type: 'item', label: 'Tout sélectionner', shortcut: 'Ctrl A', disabled: !currentGlyph?.contours.length, onSelect: selectAll },
+        { type: 'item', label: 'Supprimer la sélection', shortcut: 'Suppr', disabled: selection.length === 0, onSelect: deleteSelection },
+        { type: 'item', label: 'Inverser le sens du contour', disabled: selection.length === 0, onSelect: reverseSelected },
+        { type: 'item', label: 'Effacer le glyphe', disabled: !currentGlyph?.contours.length, onSelect: clearGlyph },
       ],
     },
     {
@@ -396,9 +458,17 @@ export function Workspace() {
         <>
           <span className="fd-strong">{TOOLS.find((t) => t.id === ws.tool)?.label}</span>
           <span className="fd-sep" aria-hidden="true" />
-          <span className="fd-muted fd-options-hint">
-            {activeId ? TOOL_HINTS[ws.tool] : 'Ouvrez ou créez une police depuis l’onglet Accueil ou le menu Fichier.'}
-          </span>
+          {activeId ? (
+            <ToolOptions
+              tool={ws.tool}
+              options={ws.toolOptions}
+              onChange={ws.setToolOptions}
+              hasSelection={selection.length > 0}
+              onDeleteSelection={deleteSelection}
+            />
+          ) : (
+            <span className="fd-muted fd-options-hint">Ouvrez ou créez une police depuis l’onglet Accueil ou le menu Fichier.</span>
+          )}
           {activeId && <span className="fd-options-right">{Math.round(view.zoom * 100)} %</span>}
         </>
       }
@@ -571,6 +641,14 @@ export function Workspace() {
         <table className="fd-table">
           <tbody>
             {[
+              ['P', 'Plume'],
+              ['B', 'Pinceau'],
+              ['V', 'Sélection'],
+              ['Ctrl Z  /  Ctrl Maj Z', 'Annuler / Rétablir'],
+              ['Ctrl A', 'Tout sélectionner'],
+              ['Suppr', 'Supprimer les points sélectionnés'],
+              ['Flèches (Maj = ×10)', 'Déplacer la sélection'],
+              ['Entrée  /  Échap', 'Fermer le tracé à la Plume'],
               ['H', 'Outil Main'],
               ['Z', 'Outil Zoom'],
               ['Barre d’espace (maintenue)', 'Main temporaire'],

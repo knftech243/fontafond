@@ -11,12 +11,13 @@ export const HOME_COMPONENT = 'home'
 export const HOME_PANEL_ID = 'home'
 export const HOME_TITLE = 'Accueil'
 
-export type ToolPanelId = 'glyphs' | 'glyph' | 'metrics'
+export type ToolPanelId = 'glyphs' | 'glyph' | 'metrics' | 'preview'
 
 export const TOOL_PANELS: { id: ToolPanelId; title: string }[] = [
   { id: 'glyphs', title: 'Glyphes' },
   { id: 'glyph', title: 'Glyphe sélectionné' },
   { id: 'metrics', title: 'Métriques' },
+  { id: 'preview', title: 'Aperçu' },
 ]
 
 export type PresetId = 'essentiel' | 'dessin'

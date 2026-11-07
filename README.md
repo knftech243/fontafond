@@ -4,7 +4,10 @@ Créez et modifiez vos polices dans le navigateur, puis utilisez-les avec un stu
 
 > Projet en cours de construction : voir [docs/PLAN.md](docs/PLAN.md) pour le périmètre et l'avancement des étapes.
 
-## Ce qui fonctionne déjà (étapes 1 et 1 bis)
+## Ce qui fonctionne déjà (étapes 1, 1 bis et 2)
+- **Dessin des lettres** : Plume (P, angles et courbes), Pinceau (B, main levée, souris, doigt ou stylet), Sélection (V, points, poignées, cadre, flèches, Suppr), chasse à la souris, approches gauche et droite, lettre modèle à décalquer, aimantation à la grille.
+- **Annuler / Rétablir** (Ctrl+Z, Ctrl+Maj+Z) et menu **Édition**.
+- Panneau **Aperçu** : un mot test écrit avec vos lettres, en direct.
 - Interface fixe, plein écran, comme un logiciel : la page ne défile jamais.
 - Menus **Fichier**, **Affichage**, **Fenêtre**, **Aide**.
 - Plusieurs polices ouvertes en **onglets** ; chaque fenêtre ou panneau se **redimensionne**, se **replie**, se **détache en fenêtre flottante**, se déplace en glissant son onglet.
@@ -52,7 +55,7 @@ npm run build
 src/
   model/   données : types, jeu de caractères, projet, stockage IndexedDB
   font/    conversions de contours (et bientôt export .otf)
-  editor/  grille et affichage des glyphes
+  editor/  grille, affichage et outils de dessin (géométrie, historique)
   workspace/ espace de travail : fenêtres (dockview), panneaux, document, dispositions
   ui/      coque fixe, menus, boîtes de dialogue, icônes
   pages/   contenu de l'onglet Accueil (Mes polices)

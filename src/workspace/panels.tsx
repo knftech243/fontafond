@@ -1,6 +1,8 @@
 import type { IDockviewHeaderActionsProps, IWatermarkPanelProps } from 'dockview-react'
 import { useEffect, useState } from 'react'
 import { GlyphGrid } from '../editor/GlyphGrid'
+import { bearings, setLeftBearing, setRightBearing } from '../editor/geometry'
+import { contoursToPathData } from '../font/path'
 import { unicodeLabel } from '../model/defaultCharset'
 import { summarize } from '../model/project'
 import type { FontMetrics, FontProject } from '../model/types'
@@ -56,6 +58,10 @@ export function GlyphPanel() {
   const { project, char } = useActiveProject()
   if (!project) return <NoDocument what="le glyphe sélectionné" />
   const glyph = project.glyphs[char] ?? project.glyphs.A
+  const side = bearings(glyph)
+  const points = glyph.contours.reduce((n, c) => n + c.points.length, 0)
+  const num = (v: string) => Math.round(Number(v) || 0)
+  const edit = (change: Parameters<typeof ws.editGlyph>[2]) => ws.editGlyph(project.id, glyph.char, change)
   return (
     <PanelBody>
       <div className="fd-panel-pad">
@@ -70,20 +76,93 @@ export function GlyphPanel() {
               min={0}
               max={4000}
               value={glyph.advanceWidth}
-              onChange={(e) => {
-                const v = Math.max(0, Math.round(Number(e.target.value) || 0))
-                ws.updateProject(project.id, (p) => ({
-                  ...p,
-                  glyphs: { ...p.glyphs, [glyph.char]: { ...p.glyphs[glyph.char], advanceWidth: v, updatedAt: Date.now() } },
-                }))
-              }}
+              onChange={(e) => edit((g) => ({ ...g, advanceWidth: Math.max(0, num(e.target.value)) }))}
             />
           </label>
           <label className="fd-field">
             <span>Unicode</span>
             <input value={unicodeLabel(glyph.char)} readOnly />
           </label>
+          <label className="fd-field">
+            <span>Approche gauche</span>
+            <input
+              type="number"
+              disabled={!side}
+              value={side ? side.left : ''}
+              placeholder="—"
+              onChange={(e) => edit((g) => setLeftBearing(g, num(e.target.value)))}
+            />
+          </label>
+          <label className="fd-field">
+            <span>Approche droite</span>
+            <input
+              type="number"
+              disabled={!side}
+              value={side ? side.right : ''}
+              placeholder="—"
+              onChange={(e) => edit((g) => setRightBearing(g, num(e.target.value)))}
+            />
+          </label>
         </div>
+        <p className="fd-muted fd-small">
+          {glyph.contours.length === 0
+            ? 'Glyphe vide : dessinez-le à la Plume (P) ou au Pinceau (B).'
+            : `${glyph.contours.length} contour${glyph.contours.length > 1 ? 's' : ''} · ${points} points`}
+        </p>
+      </div>
+    </PanelBody>
+  )
+}
+
+/** Mot test dessiné avec les glyphes de la police, en direct. */
+export function PreviewPanel() {
+  const { project } = useActiveProject()
+  const [text, setText] = useState('Bonjour')
+  const [size, setSize] = useState(56)
+  if (!project) return <NoDocument what="l'aperçu" />
+  const m = project.metrics
+  let x = 0
+  const items = [...text].map((c, i) => {
+    const g = project.glyphs[c] ?? (c === ' ' ? undefined : null)
+    const adv = g ? g.advanceWidth : c === ' ' ? 250 : 500
+    const item = { key: i, c, x, g, adv, d: g ? contoursToPathData(g.contours) : '' }
+    x += adv
+    return item
+  })
+  const width = Math.max(x, 1)
+  const height = m.ascender - m.descender
+  return (
+    <PanelBody>
+      <div className="fd-panel-pad">
+        <div className="fd-preview" style={{ height: size + 24 }}>
+          <svg
+            viewBox={`0 ${-m.ascender} ${width} ${height}`}
+            style={{ height: size, width: (size * width) / height }}
+            role="img"
+            aria-label={`Aperçu du mot « ${text} » avec la police`}
+          >
+            {items.map((it) =>
+              it.d ? (
+                <path key={it.key} d={it.d} transform={`translate(${it.x} 0) scale(1,-1)`} fill="var(--fd-ink)" />
+              ) : it.c.trim() ? (
+                <text key={it.key} x={it.x + it.adv / 2} y={0} fontSize={m.capHeight} textAnchor="middle" fill="#c9d6d6" fontFamily="Inter, sans-serif">
+                  {it.c}
+                </text>
+              ) : null,
+            )}
+          </svg>
+        </div>
+        <div className="fd-fields-2">
+          <label className="fd-field">
+            <span>Mot test</span>
+            <input value={text} maxLength={40} onChange={(e) => setText(e.target.value)} />
+          </label>
+          <label className="fd-field">
+            <span>Taille · {size} px</span>
+            <input type="range" min={24} max={120} value={size} onChange={(e) => setSize(Number(e.target.value))} />
+          </label>
+        </div>
+        <p className="fd-muted fd-small">Les lettres pas encore dessinées s'affichent en gris.</p>
       </div>
     </PanelBody>
   )

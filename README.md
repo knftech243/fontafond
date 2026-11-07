@@ -4,7 +4,11 @@ Créez et modifiez vos polices dans le navigateur, puis utilisez-les avec un stu
 
 > Projet en cours de construction : voir [docs/PLAN.md](docs/PLAN.md) pour le périmètre et l'avancement des étapes.
 
-## Ce qui fonctionne déjà (étapes 1, 1 bis, 2 et 2 bis)
+## Ce qui fonctionne déjà (étapes 1 à 3)
+- **Exporter la police en .otf** (installable sur PC et téléphone) : glyphes dessinés et accents automatiques.
+- **Accents automatiques** : é = e + ´ dès que la lettre et le signe sont dessinés (groupe « Signes »).
+- **Modifier une police existante** : ouvrir un .ttf, .otf ou .woff (licence affichée, nom de votre version, crénage conservé).
+- **Ajuster toute la police** : inclinaison et approche globale, annulables d'un coup.
 - **Famille d'outils Plume** (clic long ou clic droit sur la Plume) : Plume, Plume de courbure, Ajout de point (+), Suppression de point (−), Conversion de point (angle ↔ courbe) ; Maj+P pour passer de l'un à l'autre.
 - **Dessin des lettres** : Plume (P, angles et courbes), Pinceau (B, main levée, souris, doigt ou stylet), Sélection (V, points, poignées, cadre, flèches, Suppr), chasse à la souris, approches gauche et droite, lettre modèle à décalquer, aimantation à la grille.
 - **Annuler / Rétablir** (Ctrl+Z, Ctrl+Maj+Z) et menu **Édition**.
@@ -55,7 +59,7 @@ npm run build
 ```
 src/
   model/   données : types, jeu de caractères, projet, stockage IndexedDB
-  font/    conversions de contours (et bientôt export .otf)
+  font/    contours, export .otf, import de polices, accents automatiques, réglages globaux
   editor/  grille, affichage et outils de dessin (géométrie, historique)
   workspace/ espace de travail : fenêtres (dockview), panneaux, document, dispositions
   ui/      coque fixe, menus, boîtes de dialogue, icônes

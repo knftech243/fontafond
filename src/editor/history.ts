@@ -1,10 +1,22 @@
-/** Historique annuler / rétablir d'une police : chaque entrée est l'état d'un glyphe avant un geste. */
+/**
+ * Historique annuler / rétablir d'une police : chaque entrée est l'état, avant un geste,
+ * d'un ou de plusieurs glyphes (réglages globaux = toute la police en une étape).
+ */
 import type { Glyph } from '../model/types'
 
 export interface HistoryEntry {
+  /** Glyphe à afficher après annulation (le premier modifié). */
   char: string
-  glyph: Glyph
+  glyphs: Record<string, Glyph>
 }
+
+/** Entrée pour un seul glyphe. */
+export const single = (char: string, glyph: Glyph): HistoryEntry => ({ char, glyphs: { [char]: glyph } })
+
+const snapshot = (entry: HistoryEntry, current: (char: string) => Glyph): HistoryEntry => ({
+  char: entry.char,
+  glyphs: Object.fromEntries(Object.keys(entry.glyphs).map((c) => [c, current(c)])),
+})
 
 export interface History {
   past: HistoryEntry[]
@@ -25,7 +37,7 @@ export function undo(h: History, current: (char: string) => Glyph): { history: H
   const last = h.past[h.past.length - 1]
   if (!last) return null
   return {
-    history: { past: h.past.slice(0, -1), future: [...h.future, { char: last.char, glyph: current(last.char) }] },
+    history: { past: h.past.slice(0, -1), future: [...h.future, snapshot(last, current)] },
     restore: last,
   }
 }
@@ -34,7 +46,7 @@ export function redo(h: History, current: (char: string) => Glyph): { history: H
   const next = h.future[h.future.length - 1]
   if (!next) return null
   return {
-    history: { past: [...h.past, { char: next.char, glyph: current(next.char) }], future: h.future.slice(0, -1) },
+    history: { past: [...h.past, snapshot(next, current)], future: h.future.slice(0, -1) },
     restore: next,
   }
 }

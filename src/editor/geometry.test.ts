@@ -18,7 +18,7 @@ import {
   signedArea,
   simplifyClosed,
 } from './geometry'
-import { emptyHistory, record, redo, undo } from './history'
+import { emptyHistory, record, redo, single, undo } from './history'
 
 const square = (x: number, y: number, s: number): Contour => ({
   points: [
@@ -121,21 +121,31 @@ describe('Historique', () => {
     const v0 = createEmptyGlyph('A')
     const v1 = { ...v0, advanceWidth: 700 }
     let current = v1
-    let h = record(emptyHistory(), { char: 'A', glyph: v0 })
+    let h = record(emptyHistory(), single('A', v0))
     const u = undo(h, () => current)!
-    expect(u.restore.glyph.advanceWidth).toBe(v0.advanceWidth)
-    current = u.restore.glyph
+    expect(u.restore.glyphs.A.advanceWidth).toBe(v0.advanceWidth)
+    current = u.restore.glyphs.A
     h = u.history
     const r = redo(h, () => current)!
-    expect(r.restore.glyph.advanceWidth).toBe(700)
+    expect(r.restore.glyphs.A.advanceWidth).toBe(700)
     expect(undo(emptyHistory(), () => current)).toBeNull()
-    const after = record(u.history, { char: 'A', glyph: v0 })
+    const after = record(u.history, single('A', v0))
     expect(after.future).toHaveLength(0)
+  })
+
+  it('annule plusieurs glyphes d’un coup', () => {
+    const a = createEmptyGlyph('A')
+    const b = createEmptyGlyph('B')
+    const now: Record<string, ReturnType<typeof createEmptyGlyph>> = { A: { ...a, advanceWidth: 1 }, B: { ...b, advanceWidth: 2 } }
+    const h = record(emptyHistory(), { char: 'A', glyphs: { A: a, B: b } })
+    const u = undo(h, (c) => now[c])!
+    expect(Object.keys(u.restore.glyphs)).toEqual(['A', 'B'])
+    expect(u.history.future[0].glyphs.B.advanceWidth).toBe(2)
   })
 
   it('limite la longueur de l’historique', () => {
     let h = emptyHistory()
-    for (let i = 0; i < 120; i++) h = record(h, { char: 'A', glyph: createEmptyGlyph('A') })
+    for (let i = 0; i < 120; i++) h = record(h, single('A', createEmptyGlyph('A')))
     expect(h.past).toHaveLength(100)
   })
 })

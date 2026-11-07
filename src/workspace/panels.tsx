@@ -2,7 +2,8 @@ import type { IDockviewHeaderActionsProps, IWatermarkPanelProps } from 'dockview
 import { useEffect, useState } from 'react'
 import { GlyphGrid } from '../editor/GlyphGrid'
 import { bearings, setLeftBearing, setRightBearing } from '../editor/geometry'
-import { contoursToPathData } from '../font/path'
+import { WordPreview } from '../editor/WordPreview'
+import { composeGlyph, resolveGlyph } from '../font/composites'
 import { unicodeLabel } from '../model/defaultCharset'
 import { summarize } from '../model/project'
 import type { FontMetrics, FontProject } from '../model/types'
@@ -47,6 +48,7 @@ export function GlyphsPanel() {
           metrics={project.metrics}
           selected={char}
           onSelect={(c) => ws.selectChar(project.id, c)}
+          display={(c) => resolveGlyph(project, c)}
         />
       </div>
     </PanelBody>
@@ -104,6 +106,23 @@ export function GlyphPanel() {
             />
           </label>
         </div>
+        {glyph.contours.length === 0 && composeGlyph(project, glyph.char) && (
+          <div className="fd-auto-note">
+            <p className="fd-small">
+              <span className="fd-auto-badge">auto</span> Composé automatiquement : {composeGlyph(project, glyph.char)!.from}.
+            </p>
+            <button
+              type="button"
+              className="fd-btn fd-btn-sm"
+              onClick={() => {
+                const comp = composeGlyph(project, glyph.char)
+                if (comp) edit(() => ({ ...comp.glyph, char: glyph.char, unicode: glyph.unicode, name: glyph.name }))
+              }}
+            >
+              Décomposer pour modifier
+            </button>
+          </div>
+        )}
         <p className="fd-muted fd-small">
           {glyph.contours.length === 0
             ? 'Glyphe vide : dessinez-le à la Plume (P) ou au Pinceau (B).'
@@ -120,38 +139,10 @@ export function PreviewPanel() {
   const [text, setText] = useState('Bonjour')
   const [size, setSize] = useState(56)
   if (!project) return <NoDocument what="l'aperçu" />
-  const m = project.metrics
-  let x = 0
-  const items = [...text].map((c, i) => {
-    const g = project.glyphs[c] ?? (c === ' ' ? undefined : null)
-    const adv = g ? g.advanceWidth : c === ' ' ? 250 : 500
-    const item = { key: i, c, x, g, adv, d: g ? contoursToPathData(g.contours) : '' }
-    x += adv
-    return item
-  })
-  const width = Math.max(x, 1)
-  const height = m.ascender - m.descender
   return (
     <PanelBody>
       <div className="fd-panel-pad">
-        <div className="fd-preview" style={{ height: size + 24 }}>
-          <svg
-            viewBox={`0 ${-m.ascender} ${width} ${height}`}
-            style={{ height: size, width: (size * width) / height }}
-            role="img"
-            aria-label={`Aperçu du mot « ${text} » avec la police`}
-          >
-            {items.map((it) =>
-              it.d ? (
-                <path key={it.key} d={it.d} transform={`translate(${it.x} 0) scale(1,-1)`} fill="var(--fd-ink)" />
-              ) : it.c.trim() ? (
-                <text key={it.key} x={it.x + it.adv / 2} y={0} fontSize={m.capHeight} textAnchor="middle" fill="#c9d6d6" fontFamily="Inter, sans-serif">
-                  {it.c}
-                </text>
-              ) : null,
-            )}
-          </svg>
-        </div>
+        <WordPreview text={text} size={size} metrics={project.metrics} glyphOf={(c) => resolveGlyph(project, c)?.glyph ?? null} />
         <div className="fd-fields-2">
           <label className="fd-field">
             <span>Mot test</span>
@@ -162,7 +153,7 @@ export function PreviewPanel() {
             <input type="range" min={24} max={120} value={size} onChange={(e) => setSize(Number(e.target.value))} />
           </label>
         </div>
-        <p className="fd-muted fd-small">Les lettres pas encore dessinées s'affichent en gris.</p>
+        <p className="fd-muted fd-small">Les lettres pas encore dessinées s'affichent en gris ; les accents automatiques sont inclus.</p>
       </div>
     </PanelBody>
   )

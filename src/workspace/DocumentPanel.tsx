@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as RPoi
 import { EditorLayer } from '../editor/EditorLayer'
 import { GlyphView } from '../editor/GlyphView'
 import { useGlyphEditor } from '../editor/useGlyphEditor'
+import { composeGlyph } from '../font/composites'
 import { createEmptyGlyph } from '../model/project'
 import { FIT_VIEW, isDrawTool, useWorkspace, zoomAt } from './workspaceContext'
 
@@ -74,8 +75,9 @@ export function DocumentPanel(props: IDockviewPanelProps<{ projectId: string }>)
   const char = ws.selectedChar(projectId)
   const glyph = (project && (project.glyphs[char] ?? project.glyphs.A)) || createEmptyGlyph(char)
   const metrics = project?.metrics
-  const vbW = glyph.advanceWidth + PAD * 2
-  const vbH = metrics ? metrics.ascender - metrics.descender + PAD * 2 : 1
+  const pad = PAD * ((metrics?.unitsPerEm ?? 1000) / 1000)
+  const vbW = glyph.advanceWidth + pad * 2
+  const vbH = metrics ? metrics.ascender - metrics.descender + pad * 2 : 1
   const aspect = vbW / vbH
   const baseW = Math.max(120, Math.min(size.w * 0.9, size.h * 0.9 * aspect))
   const pxPerUnit = (baseW * view.zoom) / vbW
@@ -145,6 +147,7 @@ export function DocumentPanel(props: IDockviewPanelProps<{ projectId: string }>)
     editor.onPointerUp(e)
   }
 
+  const auto = glyph.contours.length === 0 ? composeGlyph(project, glyph.char) : null
   const cursor = panMode ? (panning ? 'grabbing' : 'grab') : ws.tool === 'zoom' ? 'zoom-in' : editor.cursor
   const step = (f: number) => ws.setView(projectId, (v) => zoomAt(v, f))
 
@@ -169,6 +172,7 @@ export function DocumentPanel(props: IDockviewPanelProps<{ projectId: string }>)
             metrics={metrics}
             svgRef={svgRef}
             template={ws.toolOptions.template}
+            ghost={auto?.glyph.contours}
             overlay={
               <EditorLayer
                 glyph={glyph}
@@ -182,6 +186,20 @@ export function DocumentPanel(props: IDockviewPanelProps<{ projectId: string }>)
           />
         </div>
       </div>
+      {auto && (
+        <div className="fd-doc-banner" role="status">
+          <span>
+            <span className="fd-auto-badge">auto</span> « {glyph.char} » est composé automatiquement ({auto.from}). Dessinez ici pour le remplacer, ou :
+          </span>
+          <button
+            type="button"
+            className="fd-btn fd-btn-sm"
+            onClick={() => ws.editGlyph(projectId, glyph.char, (g) => ({ ...g, advanceWidth: auto.glyph.advanceWidth, contours: auto.glyph.contours }))}
+          >
+            Décomposer pour modifier
+          </button>
+        </div>
+      )}
       <div className="fd-zoombar" role="group" aria-label="Zoom">
         <button type="button" className="fd-zoom-btn" aria-label="Zoom arrière" onClick={() => step(1 / 1.25)}>
           −

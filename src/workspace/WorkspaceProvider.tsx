@@ -2,7 +2,7 @@ import type { DockviewApi } from 'dockview-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createProject } from '../model/project'
 import { getProject, saveProject } from '../model/storage'
-import { emptyHistory, record, redo as redoHistory, undo as undoHistory, type History } from '../editor/history'
+import { emptyHistory, record, redo as redoHistory, single, undo as undoHistory, type History } from '../editor/history'
 import type { FontProject, Glyph } from '../model/types'
 import { DOCUMENT_COMPONENT, HOME_PANEL_ID, documentPanelId } from './layouts'
 import { documentPosition } from './positions'
@@ -109,8 +109,17 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     updateProject(id, (p) => ({ ...p, glyphs: { ...p.glyphs, [char]: { ...glyph, updatedAt: Date.now() } } }))
   }
 
+  function putGlyphs(id: string, changed: Record<string, Glyph>) {
+    const now = Date.now()
+    updateProject(id, (p) => {
+      const glyphs = { ...p.glyphs }
+      for (const [c, g] of Object.entries(changed)) glyphs[c] = { ...g, updatedAt: now }
+      return { ...p, glyphs }
+    })
+  }
+
   function recordHistory(id: string, char: string, before: Glyph) {
-    setHistories((h) => ({ ...h, [id]: record(h[id] ?? emptyHistory(), { char, glyph: before }) }))
+    setHistories((h) => ({ ...h, [id]: record(h[id] ?? emptyHistory(), single(char, before)) }))
   }
 
   function travel(id: string, dir: 'undo' | 'redo') {
@@ -120,7 +129,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     const res = (dir === 'undo' ? undoHistory : redoHistory)(h, (c) => p.glyphs[c])
     if (!res) return
     setHistories((all) => ({ ...all, [id]: res.history }))
-    putGlyph(id, res.restore.char, res.restore.glyph)
+    putGlyphs(id, res.restore.glyphs)
     setSelected((s) => ({ ...s, [id]: res.restore.char }))
     setSelections((s) => ({ ...s, [id]: { char: res.restore.char, keys: [] } }))
   }
@@ -177,6 +186,24 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       if (next === g) return
       if (rec) recordHistory(id, char, g)
       putGlyph(id, char, next)
+    },
+    editGlyphs: (id, change) => {
+      const p = projects[id]
+      if (!p) return
+      const next = change(p.glyphs)
+      const before: Record<string, Glyph> = {}
+      const after: Record<string, Glyph> = {}
+      for (const [c, g] of Object.entries(next)) {
+        if (g !== p.glyphs[c]) {
+          before[c] = p.glyphs[c]
+          after[c] = g
+        }
+      }
+      const chars = Object.keys(after)
+      if (chars.length === 0) return
+      const focus = chars.includes(selectedChar(id)) ? selectedChar(id) : chars[0]
+      setHistories((h) => ({ ...h, [id]: record(h[id] ?? emptyHistory(), { char: focus, glyphs: before }) }))
+      putGlyphs(id, after)
     },
     recordHistory,
     undo: (id) => travel(id, 'undo'),

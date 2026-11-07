@@ -10,12 +10,14 @@ interface GlyphGridProps {
   metrics: FontMetrics
   selected: string
   onSelect: (char: string) => void
+  /** Glyphe à afficher (dessiné ou composé automatiquement). */
+  display?: (char: string) => { glyph: Glyph; composite: boolean } | null
 }
 
 const ALL = 'all'
 
 /** Grille des caractères : vides (pointillés), dessinés, ou en cours (jaune). */
-export function GlyphGrid({ glyphs, metrics, selected, onSelect }: GlyphGridProps) {
+export function GlyphGrid({ glyphs, metrics, selected, onSelect, display }: GlyphGridProps) {
   const [group, setGroup] = useState<string>(ALL)
   const [query, setQuery] = useState('')
 
@@ -57,18 +59,24 @@ export function GlyphGrid({ glyphs, metrics, selected, onSelect }: GlyphGridProp
       </div>
       <div className="fd-cells">
         {chars.map((c) => {
-          const g = glyphs[c]
-          const state = c === selected ? 'current' : isDrawn(g) ? 'drawn' : 'empty'
+          const shown = display?.(c) ?? { glyph: glyphs[c], composite: false }
+          const drawn = isDrawn(shown.glyph)
+          const state = c === selected ? 'current' : drawn ? (shown.composite ? 'auto' : 'drawn') : 'empty'
           return (
             <button
               key={c}
               type="button"
               className={`fd-cell fd-cell-${state}`}
               aria-pressed={c === selected}
-              aria-label={`Glyphe ${c} (${unicodeLabel(c)})${state === 'empty' ? ', vide' : ''}`}
+              aria-label={`Glyphe ${c} (${unicodeLabel(c)})${!drawn ? ', vide' : shown.composite ? ', composé automatiquement' : ''}`}
               onClick={() => onSelect(c)}
             >
-              <GlyphThumb glyph={g} metrics={metrics} />
+              <GlyphThumb glyph={shown.glyph} metrics={metrics} />
+              {shown.composite && drawn && (
+                <span className="fd-auto-tag" aria-hidden="true">
+                  auto
+                </span>
+              )}
             </button>
           )
         })}

@@ -3,7 +3,7 @@
  * Une base « fontafond », un magasin « projects » : clé = id du projet.
  */
 import { createStore, del, get, set, values, type UseStore } from 'idb-keyval'
-import { isFontProject, summarize, withNewIdentity } from './project'
+import { isFontProject, summarize, withCharset, withNewIdentity } from './project'
 import type { FontProject, ProjectSummary } from './types'
 
 let store: UseStore | null = null
@@ -22,7 +22,7 @@ export async function listProjects(): Promise<ProjectSummary[]> {
 
 export async function getProject(id: string): Promise<FontProject | undefined> {
   const p: unknown = await get(id, projects())
-  return isFontProject(p) ? p : undefined
+  return isFontProject(p) ? withCharset(p) : undefined
 }
 
 /** Enregistre le projet et met à jour sa date de modification. */

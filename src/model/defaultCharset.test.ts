@@ -4,7 +4,7 @@ import { CHARSET_GROUPS, DEFAULT_CHARSET, defaultAdvance, glyphName, unicodeLabe
 describe('jeu de caractères par défaut', () => {
   it("n'a pas de doublon et contient les groupes attendus", () => {
     expect(new Set(DEFAULT_CHARSET).size).toBe(DEFAULT_CHARSET.length)
-    expect(CHARSET_GROUPS.map((g) => g.id)).toEqual(['upper', 'lower', 'digits', 'punct', 'accents'])
+    expect(CHARSET_GROUPS.map((g) => g.id)).toEqual(['upper', 'lower', 'digits', 'punct', 'accents', 'marks'])
   })
 
   it('contient les lettres accentuées du français', () => {

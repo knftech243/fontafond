@@ -72,6 +72,8 @@ export interface WorkspaceValue {
   setToolOptions: (patch: Partial<ToolOptions>) => void
   /** Modifie le glyphe en cours ; `record` = une étape d'historique (sinon, geste en cours). */
   editGlyph: (projectId: string, char: string, change: (g: Glyph) => Glyph, record?: boolean) => void
+  /** Modifie plusieurs glyphes en une seule étape d'historique (réglages globaux). */
+  editGlyphs: (projectId: string, change: (glyphs: Record<string, Glyph>) => Record<string, Glyph>) => void
   /** Termine un geste (glisser) : mémorise l'état d'avant dans l'historique. */
   recordHistory: (projectId: string, char: string, before: Glyph) => void
   undo: (projectId: string) => void

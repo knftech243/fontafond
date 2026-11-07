@@ -26,6 +26,12 @@ export const CHARSET_GROUPS: CharsetGroup[] = [
     label: 'Accents',
     chars: [...'àâäçéèêëîïôöùûüÿœæÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸŒÆ'],
   },
+  {
+    id: 'marks',
+    label: 'Signes',
+    // Signes diacritiques (pour les accents automatiques) et i sans point.
+    chars: [...'´`ˆ¨¸˜ı'],
+  },
 ]
 
 /** Tous les caractères, sans doublon, dans l'ordre des groupes. */

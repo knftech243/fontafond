@@ -26,3 +26,6 @@ export { isDocumentPanel, isToolPanel }
 
 /** Événement envoyé par le filigrane « Réinitialiser l'espace de travail ». */
 export const RESET_EVENT = 'fontafond:reset-workspace'
+
+/** Événement envoyé par l'Accueil pour ouvrir une police existante (.ttf, .otf, .woff). */
+export const IMPORT_FONT_EVENT = 'fontafond:import-font'

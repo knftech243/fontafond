@@ -47,7 +47,12 @@ import {
   type PresetId,
 } from './layouts'
 import { GlyphPanel, GlyphsPanel, GroupActions, HomePanel, MetricsPanel, PreviewPanel, Watermark } from './panels'
-import { RESET_EVENT, documentPosition, isDocumentPanel, toolPosition } from './positions'
+import { IMPORT_FONT_EVENT, RESET_EVENT, documentPosition, isDocumentPanel, toolPosition } from './positions'
+import { AdjustFontDialog, ImportFontDialog } from './FontDialogs'
+import { UnsupportedFontError, fontToProject, readFont, type ParsedFont } from '../font/fromOpentype'
+import { adjustAll } from '../font/globalAdjust'
+import { projectToOtf } from '../font/toOpentype'
+import { saveProject } from '../model/storage'
 import { FIT_VIEW, PEN_TOOLS, isPenTool, useWorkspace, zoomAt, type Tool } from './workspaceContext'
 
 const THEME: DockviewTheme = { ...themeDark, name: 'fontafond', className: `${themeDark.className} fd-dock` }
@@ -113,7 +118,7 @@ const TOOLS: { id: Tool; icon: IconName; label: string; key: string; ready: bool
 const isTyping = (t: EventTarget | null) =>
   t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))
 
-type DialogName = 'appearance' | 'save-workspace' | 'manage-workspaces' | 'shortcuts' | 'about' | 'new-font' | null
+type DialogName = 'appearance' | 'save-workspace' | 'manage-workspaces' | 'shortcuts' | 'about' | 'new-font' | 'adjust' | null
 
 export function Workspace() {
   const ws = useWorkspace()
@@ -126,8 +131,23 @@ export function Workspace() {
   const [dialog, setDialog] = useState<DialogName>(null)
   const [wsName, setWsName] = useState('')
   const [newFontName, setNewFontName] = useState('Ma police')
-  const [notice, setNotice] = useState<string | null>(null)
+  const [notice, setNoticeState] = useState<{ kind: 'error' | 'info'; text: string } | null>(null)
+  const setNotice = (text: string | null, kind: 'error' | 'info' = 'error') => setNoticeState(text ? { kind, text } : null)
+  // Les messages d'information disparaissent seuls ; les erreurs restent jusqu'à fermeture.
+  useEffect(() => {
+    if (notice?.kind !== 'info') return
+    const t = window.setTimeout(() => setNoticeState(null), 9000)
+    return () => window.clearTimeout(t)
+  }, [notice])
   const importRef = useRef<HTMLInputElement>(null)
+  const fontInputRef = useRef<HTMLInputElement>(null)
+  const [pendingFont, setPendingFont] = useState<{ parsed: ParsedFont; fileName: string } | null>(null)
+
+  useEffect(() => {
+    const on = () => fontInputRef.current?.click()
+    window.addEventListener(IMPORT_FONT_EVENT, on)
+    return () => window.removeEventListener(IMPORT_FONT_EVENT, on)
+  }, [])
 
   useEffect(() => {
     applyAppearance(document.documentElement, appearance)
@@ -366,6 +386,52 @@ export function Workspace() {
     }
   }
 
+  async function onFontFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      setPendingFont({ parsed: readFont(await file.arrayBuffer()), fileName: file.name })
+    } catch (err) {
+      setNotice(err instanceof UnsupportedFontError ? err.message : 'Impossible de lire cette police.')
+    }
+  }
+
+  async function importPendingFont(versionName: string) {
+    if (!pendingFont) return
+    const { project: p, truncated } = fontToProject(pendingFont.parsed, versionName)
+    setPendingFont(null)
+    try {
+      const saved = await saveProject(p)
+      ws.bumpList()
+      ws.openProject(saved.id, saved.name)
+      const drawn = Object.values(saved.glyphs).filter((g) => g.contours.length > 0).length
+      setNotice(
+        `« ${saved.name} » importée : ${drawn} glyphes dessinés, ${saved.kerning.length} paires de crénage conservées.` +
+          (truncated ? ' Police très grande : seuls les 2 000 premiers caractères ont été importés.' : ''),
+        'info',
+      )
+    } catch {
+      setNotice("L'enregistrement de la police a échoué (stockage de l'appareil plein ?).")
+    }
+  }
+
+  function exportOtf() {
+    if (!project) return
+    const res = projectToOtf(project)
+    if (res.exported === 0) {
+      setNotice('Rien à exporter : dessinez au moins une lettre.')
+      return
+    }
+    downloadFile(res.fileName, res.buffer, 'font/otf')
+    setNotice(
+      `${res.fileName} : ${res.exported} glyphes exportés sur ${res.total}` +
+        (res.composites ? ` (dont ${res.composites} accent${res.composites > 1 ? 's' : ''} automatique${res.composites > 1 ? 's' : ''})` : '') +
+        '. Le crénage par paires sera ajouté à une prochaine étape.',
+      'info',
+    )
+  }
+
   const wsLabel = activeWs.startsWith('custom:')
     ? activeWs.slice(7)
     : (PRESETS.find((p) => `preset:${p.id}` === activeWs)?.name ?? 'Essentiel')
@@ -377,8 +443,10 @@ export function Workspace() {
       items: [
         { type: 'item', label: 'Nouvelle police…', onSelect: () => setDialog('new-font') },
         { type: 'item', label: 'Ouvrir (Mes polices)', onSelect: showHome },
+        { type: 'item', label: 'Ouvrir une police (.ttf, .otf, .woff)…', onSelect: () => fontInputRef.current?.click() },
         { type: 'item', label: 'Importer un projet .json…', onSelect: () => importRef.current?.click() },
         { type: 'separator' },
+        { type: 'item', label: 'Exporter la police (.otf)', disabled: !project, onSelect: exportOtf },
         {
           type: 'item',
           label: 'Exporter la police en .json',
@@ -399,6 +467,8 @@ export function Workspace() {
         { type: 'item', label: 'Supprimer la sélection', shortcut: 'Suppr', disabled: selection.length === 0, onSelect: deleteSelection },
         { type: 'item', label: 'Inverser le sens du contour', disabled: selection.length === 0, onSelect: reverseSelected },
         { type: 'item', label: 'Effacer le glyphe', disabled: !currentGlyph?.contours.length, onSelect: clearGlyph },
+        { type: 'separator' },
+        { type: 'item', label: 'Ajuster toute la police…', disabled: !project, onSelect: () => setDialog('adjust') },
       ],
     },
     {
@@ -474,7 +544,13 @@ export function Workspace() {
         ) : null
       }
       actions={
-        <button type="button" className="fd-btn fd-btn-primary fd-btn-sm" disabled title="Disponible après les outils de dessin">
+        <button
+          type="button"
+          className="fd-btn fd-btn-primary fd-btn-sm"
+          disabled={!project}
+          title={project ? 'Exporter la police en .otf, installable sur PC et téléphone' : 'Ouvrez une police pour l’exporter'}
+          onClick={exportOtf}
+        >
           <Icon name="download" /> Exporter .otf
         </button>
       }
@@ -532,9 +608,33 @@ export function Workspace() {
       }
     >
       <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={onImportFile} />
+      <input
+        ref={fontInputRef}
+        type="file"
+        accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff"
+        hidden
+        data-testid="ouvrir-police"
+        onChange={onFontFile}
+      />
+      <ImportFontDialog
+        key={pendingFont?.fileName ?? 'aucune'}
+        parsed={pendingFont?.parsed ?? null}
+        fileName={pendingFont?.fileName ?? ''}
+        onCancel={() => setPendingFont(null)}
+        onImport={importPendingFont}
+      />
+      <AdjustFontDialog
+        project={project ?? null}
+        open={dialog === 'adjust'}
+        onClose={() => setDialog(null)}
+        onApply={(a) => {
+          if (activeId) ws.editGlyphs(activeId, (glyphs) => adjustAll(glyphs, a))
+          setDialog(null)
+        }}
+      />
       {notice && (
-        <p role="alert" className="fd-toast">
-          {notice}
+        <p role={notice.kind === 'error' ? 'alert' : 'status'} className={`fd-toast${notice.kind === 'info' ? ' fd-toast-info' : ''}`}>
+          {notice.text}
           <button type="button" className="fd-icon-btn" aria-label="Fermer le message" onClick={() => setNotice(null)}>
             ×
           </button>

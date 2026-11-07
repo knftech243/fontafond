@@ -86,3 +86,16 @@ export function isFontProject(value: unknown): value is FontProject {
 export function withNewIdentity(project: FontProject, now = Date.now()): FontProject {
   return { ...project, id: newId(), kerning: project.kerning ?? [], updatedAt: now }
 }
+
+/** Ajoute à un projet existant les caractères apparus depuis sa création (rien n'est perdu). */
+export function withCharset(project: FontProject): FontProject {
+  const missing = [SPACE, ...DEFAULT_CHARSET].filter((c) => !project.glyphs[c])
+  if (missing.length === 0) return project
+  const glyphs = { ...project.glyphs }
+  const scale = project.metrics.unitsPerEm / 1000
+  for (const c of missing) {
+    const g = createEmptyGlyph(c)
+    glyphs[c] = { ...g, advanceWidth: Math.round(g.advanceWidth * scale) }
+  }
+  return { ...project, glyphs }
+}

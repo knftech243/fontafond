@@ -1,6 +1,6 @@
 import type { ReactNode, Ref } from 'react'
 import { contoursToPathData } from '../font/path'
-import type { FontMetrics, Glyph } from '../model/types'
+import type { Contour, FontMetrics, Glyph } from '../model/types'
 
 interface GuideDef {
   key: keyof FontMetrics | 'baseline'
@@ -26,14 +26,18 @@ interface GlyphViewProps {
   svgRef?: Ref<SVGSVGElement>
   /** Lettre modèle grise en fond, pour décalquer. */
   template?: boolean
+  /** Contours affichés en transparence (accent composé automatiquement). */
+  ghost?: Contour[]
 }
 
 /** Marge autour de la chasse, en unités de police (partagée avec le calque d'édition). */
 const GLYPH_PAD = 160
 
 /** Glyphe affiché sur le plan de travail, avec ses lignes guides et sa chasse. */
-export function GlyphView({ glyph, metrics, overlay, svgRef, template = true }: GlyphViewProps) {
-  const pad = GLYPH_PAD
+export function GlyphView({ glyph, metrics, overlay, svgRef, template = true, ghost }: GlyphViewProps) {
+  // Tailles d'affichage proportionnelles aux unités par em (1000, 2048…).
+  const k = metrics.unitsPerEm / 1000
+  const pad = GLYPH_PAD * k
   const adv = glyph.advanceWidth
   const top = metrics.ascender + pad
   const bottom = metrics.descender - pad
@@ -51,8 +55,8 @@ export function GlyphView({ glyph, metrics, overlay, svgRef, template = true }: 
       aria-label={`Glyphe ${glyph.char}, chasse ${adv}`}
     >
       <defs>
-        <pattern id="fd-grid" width="50" height="50" patternUnits="userSpaceOnUse">
-          <path d="M50 0H0V50" fill="none" stroke="#eceef3" strokeWidth="2" />
+        <pattern id="fd-grid" width={50 * k} height={50 * k} patternUnits="userSpaceOnUse">
+          <path d={`M${50 * k} 0H0V${50 * k}`} fill="none" stroke="#eceef3" strokeWidth={2 * k} />
         </pattern>
       </defs>
       <rect x={-pad} y={-top} width={width} height={height} fill="var(--fd-paper)" />
@@ -69,27 +73,27 @@ export function GlyphView({ glyph, metrics, overlay, svgRef, template = true }: 
               y1={y}
               y2={y}
               stroke={g.color}
-              strokeWidth={g.key === 'baseline' ? 4 : 2.5}
-              strokeDasharray={g.dashed ? '12 9' : undefined}
+              strokeWidth={(g.key === 'baseline' ? 4 : 2.5) * k}
+              strokeDasharray={g.dashed ? `${12 * k} ${9 * k}` : undefined}
             />
-            <text x={-pad + 12} y={y - 10} fontSize="26" fill={g.labelColor} fontFamily="Inter, sans-serif">
+            <text x={-pad + 12 * k} y={y - 10 * k} fontSize={26 * k} fill={g.labelColor} fontFamily="Inter, sans-serif">
               {g.label} {value(g.key)}
             </text>
           </g>
         )
       })}
 
-      <line x1={0} x2={0} y1={-top} y2={-bottom} stroke="#8aa5a5" strokeWidth="2.5" />
-      <line x1={adv} x2={adv} y1={-top} y2={-bottom} stroke="#007FFF" strokeWidth="3" strokeDasharray="14 8" />
-      <rect x={adv - 16} y={-metrics.xHeight / 2 - 42} width="32" height="84" rx="9" fill="#F7D618" stroke="#0b1a1b" strokeWidth="3" />
-      <text x={adv - 12} y={-bottom - 18} fontSize="26" textAnchor="end" fill="#4d6566" fontFamily="Inter, sans-serif">
+      <line x1={0} x2={0} y1={-top} y2={-bottom} stroke="#8aa5a5" strokeWidth={2.5 * k} />
+      <line x1={adv} x2={adv} y1={-top} y2={-bottom} stroke="#007FFF" strokeWidth={3 * k} strokeDasharray={`${14 * k} ${8 * k}`} />
+      <rect x={adv - 16 * k} y={-metrics.xHeight / 2 - 42 * k} width={32 * k} height={84 * k} rx={9 * k} fill="#F7D618" stroke="#0b1a1b" strokeWidth={3 * k} />
+      <text x={adv - 12 * k} y={-bottom - 18 * k} fontSize={26 * k} textAnchor="end" fill="#4d6566" fontFamily="Inter, sans-serif">
         Chasse {adv}
       </text>
 
-      {template && (
+      {template && !(ghost && ghost.length) && (
         <text
           x={adv / 2}
-          y={-metrics.capHeight / 2 + 120}
+          y={-metrics.capHeight / 2 + 120 * k}
           fontSize={Math.round(metrics.capHeight * 0.9)}
           textAnchor="middle"
           fill={d ? '#dfe7e7' : '#c9d6d6'}
@@ -98,6 +102,9 @@ export function GlyphView({ glyph, metrics, overlay, svgRef, template = true }: 
         >
           {glyph.char}
         </text>
+      )}
+      {ghost && ghost.length > 0 && (
+        <path d={contoursToPathData(ghost)} transform="scale(1,-1)" fill="#205A5C" fillOpacity={0.45} fillRule="nonzero" />
       )}
       {d && <path d={d} transform="scale(1,-1)" fill="var(--fd-ink)" fillRule="nonzero" />}
       {overlay && <g transform="scale(1,-1)">{overlay}</g>}

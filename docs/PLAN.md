@@ -97,6 +97,17 @@ src/
 | **Options** | Aimanter à la grille (10 unités), afficher les poignées, lettre modèle grise (pour décalquer), réglages du pinceau. |
 | **Panneau Aperçu** | Mot test modifiable dessiné avec les glyphes de la police, en direct. |
 
+## 3 ter. Polices (étape 3)
+
+| Fonction | Comportement |
+|---|---|
+| **Exporter la police (.otf)** | Fichier › Exporter la police (.otf) ou bouton « Exporter .otf ». Fichier OpenType (contours CFF) avec `.notdef`, espace, glyphes dessinés et accents composés ; glyphes non dessinés exclus. |
+| **Accents automatiques** | Groupe « Signes » (´ ` ˆ ¨ ¸ ˜ ı). « é » non dessiné = « e » + « ´ » ; signe remonté pour les majuscules, cédille en bas, î/ï sur « ı ». Vignette « auto » ; « Décomposer pour modifier » copie les contours. |
+| **Modifier une police existante** | Ouvrir un `.ttf`, `.otf` ou `.woff` : contours, chasses, métriques et paires de crénage repris ; licence du fichier affichée ; nom de la nouvelle version. WOFF2 non pris en charge. |
+| **Réglages globaux** | Édition › Ajuster toute la police : inclinaison et approche globale, aperçu en direct, une seule annulation. |
+
+Limite : opentype.js 2.0 n'écrit pas les tables de crénage ; les paires restent dans le projet et seront écrites à l'étape 6.
+
 ## 4. Étapes
 
 | # | Contenu | Test | État |
@@ -105,8 +116,8 @@ src/
 | 1 | Squelette, thème, modèle, stockage, « Mes polices », grille des glyphes, métriques | Un projet survit au rechargement | Fait |
 | 1 bis | Espace de travail modulable : interface fixe, menus, onglets de documents, panneaux repliables et flottants, espaces de travail, apparence, zoom et déplacement | Aucun défilement de page ; disposition conservée au rechargement | Fait (fusionné dans `main`) |
 | 2 | Éditeur : Plume, Pinceau, Sélection, chasse à la souris, approches, annuler/rétablir, menu Édition, panneau Aperçu | Dessiner un « A » et un « a » | Fait (fusionné dans `main`) |
-| 2 bis | Famille d'outils Plume (Plume de courbure, Ajout, Suppression, Conversion de point) | Tracer un « O » en 4 clics, convertir un angle en courbe | Fait (en attente de validation) |
-| 3 | Export `.otf`, import et modification d'une police existante, accents composés, réglages globaux | Relire le `.otf` exporté ; l'installer | À faire |
+| 2 bis | Famille d'outils Plume (Plume de courbure, Ajout, Suppression, Conversion de point) | Tracer un « O » en 4 clics, convertir un angle en courbe | Fait (fusionné dans `main`) |
+| 3 | Export `.otf`, import et modification d'une police existante, accents composés, réglages globaux | Relire le `.otf` exporté ; l'installer | Fait (en attente de validation) |
 | 4 | Studio 1 : moteur de mise en page, Caractère, Paragraphe, sélecteur de couleur | Vitest : approche, crénage, justification, retraits | À faire |
 | 5 | Studio 2 : texte sur tracé, effets, conversion en contours, exports SVG/PNG | Le SVG ne contient que des `<path>` | À faire |
 | 6 | Crénage par paires, déploiement Vercel, README final | Lien public testé sur téléphone | À faire |
@@ -131,3 +142,5 @@ src/
 - **2026-11-07** : étape 2 validée par Franck (démo en ligne) et fusionnée dans `main`, pour que GitHub et le PC de Franck aient la même version que la démo.
 - **2026-11-07** : retour de Franck : la Plume manquait de ses propriétés et de la conversion de point. Ajout de l'étape 2 bis (famille d'outils Plume comme dans Photoshop + Conversion de point).
 - **2026-11-07** : étape 2 bis livrée sur la branche `etape-2bis-plume` : bouton Plume groupé (clic long ou clic droit), Plume de courbure, Ajout et Suppression de point d'ancrage (+ et −), Conversion de point, Maj+P pour passer d'un outil à l'autre.
+- **2026-11-07** : étape 2 bis validée et fusionnée dans `main`. Début de l'étape 3 (polices), détail en section 3 ter.
+- **2026-11-07** : étape 3 livrée sur la branche `etape-3-polices` : export `.otf` validé avec fontTools, accents automatiques (groupe « Signes »), import TTF/OTF/WOFF avec licence et crénage conservé, réglages globaux (inclinaison, approche) annulables d'un coup. Les guides de l'éditeur s'adaptent aux polices en 2048 unités/em.

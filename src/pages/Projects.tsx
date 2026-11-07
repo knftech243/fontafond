@@ -11,6 +11,7 @@ import {
 import type { ProjectSummary } from '../model/types'
 import { Dialog } from '../ui/Dialog'
 import { Icon } from '../ui/Icon'
+import { IMPORT_FONT_EVENT } from '../workspace/positions'
 import { useWorkspace } from '../workspace/workspaceContext'
 import { downloadFile, safeFileName } from '../utils/download'
 
@@ -142,12 +143,10 @@ export function ProjectsHome() {
             <p className="fd-muted">
               Ouvrez un fichier .ttf, .otf ou .woff : ses lettres, sa chasse et son crénage deviendront modifiables.
             </p>
-            <button type="button" className="fd-btn" disabled aria-describedby="import-font-soon">
+            <button type="button" className="fd-btn fd-btn-primary" onClick={() => window.dispatchEvent(new Event(IMPORT_FONT_EVENT))}>
               Choisir un fichier de police
             </button>
-            <span id="import-font-soon" className="fd-badge">
-              Bientôt disponible
-            </span>
+            <span className="fd-muted fd-small">WOFF2 non pris en charge pour l'instant.</span>
           </div>
 
           <div className="fd-card">

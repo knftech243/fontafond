@@ -99,7 +99,7 @@ src/
 | 0 | Maquette : palette, sélecteur de couleur, panneaux, texte sur tracé, conversion | Validation visuelle | Fait |
 | 1 | Squelette, thème, modèle, stockage, « Mes polices », grille des glyphes, métriques | Un projet survit au rechargement | Fait |
 | 1 bis | Espace de travail modulable : interface fixe, menus, onglets de documents, panneaux repliables et flottants, espaces de travail, apparence, zoom et déplacement | Aucun défilement de page ; disposition conservée au rechargement | Fait (fusionné dans `main`) |
-| 2 | Éditeur : Plume, Pinceau, Sélection, chasse à la souris, approches, annuler/rétablir, menu Édition, panneau Aperçu | Dessiner un « A » et un « a » | Fait (en attente de validation) |
+| 2 | Éditeur : Plume, Pinceau, Sélection, chasse à la souris, approches, annuler/rétablir, menu Édition, panneau Aperçu | Dessiner un « A » et un « a » | Fait (fusionné dans `main`) |
 | 3 | Export `.otf`, import et modification d'une police existante, accents composés, réglages globaux | Relire le `.otf` exporté ; l'installer | À faire |
 | 4 | Studio 1 : moteur de mise en page, Caractère, Paragraphe, sélecteur de couleur | Vitest : approche, crénage, justification, retraits | À faire |
 | 5 | Studio 2 : texte sur tracé, effets, conversion en contours, exports SVG/PNG | Le SVG ne contient que des `<path>` | À faire |
@@ -122,3 +122,4 @@ src/
 - **2026-11-06** : demande de Franck : fenêtres modifiables comme dans Photoshop (redimensionner, replier, flottantes, espaces de travail), fenêtre de document et apparence personnalisables, interface fixe sans barre de navigation ni défilement de page. Ajout de l'étape 1 bis et de dockview.
 - **2026-11-07** : étape 1 bis validée par Franck et fusionnée dans `main`. Début de l'étape 2 (éditeur de glyphe), détail en section 3 bis.
 - **2026-11-07** : étape 2 livrée sur la branche `etape-2-editeur` : Plume (angles et courbes, sens des contreformes automatique), Pinceau (perfect-freehand), Sélection (points, poignées alignées, cadre, flèches, suppression), chasse à la souris, approches, annuler/rétablir, menu Édition (dont « Inverser le sens du contour »), panneau Aperçu. Correctif : la police active est retrouvée au rechargement même si un panneau avait le focus.
+- **2026-11-07** : étape 2 validée par Franck (démo en ligne) et fusionnée dans `main`, pour que GitHub et le PC de Franck aient la même version que la démo.

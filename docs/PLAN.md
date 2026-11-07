@@ -85,6 +85,11 @@ src/
 | Outil / fonction | Comportement |
 |---|---|
 | **Plume (P)** | Clic = point d'angle ; clic-glisser = point courbe avec poignées symétriques ; clic sur le premier point = ferme le contour ; Échap ou Entrée = ferme le contour s'il a au moins 3 points, sinon l'abandonne. |
+| **Plume de courbure** | Chaque clic pose un point ; la courbe passe automatiquement par les points ; aperçu du segment suivant sous la souris ; double-clic sur un point du tracé = angle ou lisse. |
+| **Ajout de point d'ancrage (+)** | Clic sur un contour : un point est inséré sans déformer la courbe. |
+| **Suppression de point d'ancrage (−)** | Clic sur un point : il disparaît avec ses poignées. |
+| **Conversion de point** | Clic sur un point lisse = angle ; clic-glisser sur un angle = point lisse ; glisser une poignée = la déplace seule. |
+| **Famille Plume** | Un seul bouton regroupe Plume, Plume de courbure, Ajout, Suppression et Conversion : clic long ou clic droit pour choisir, Maj+P pour passer de l'un à l'autre. |
 | **Pinceau (B)** | Trait à main levée (souris, doigt, stylet) transformé en forme pleine (perfect-freehand), simplifié, puis ajouté comme contour. Options : épaisseur (10 à 200 unités), lissage, pression du stylet. |
 | **Sélection (V)** | Clic sur un point (Maj = ajouter), cadre de sélection, clic dans une forme = tout le contour ; glisser pour déplacer (les poignées suivent leur point ; sur un point courbe, la poignée opposée reste alignée, Alt pour les séparer) ; flèches = 1 unité (Maj = 10) ; Suppr = supprimer (un contour de moins de 3 points disparaît). |
 | **Chasse et approches** | Poignée jaune de chasse à tirer avec la Sélection ; panneau Glyphe : chasse, approche gauche et droite (calculées depuis la boîte englobante), modifiables. |
@@ -100,6 +105,7 @@ src/
 | 1 | Squelette, thème, modèle, stockage, « Mes polices », grille des glyphes, métriques | Un projet survit au rechargement | Fait |
 | 1 bis | Espace de travail modulable : interface fixe, menus, onglets de documents, panneaux repliables et flottants, espaces de travail, apparence, zoom et déplacement | Aucun défilement de page ; disposition conservée au rechargement | Fait (fusionné dans `main`) |
 | 2 | Éditeur : Plume, Pinceau, Sélection, chasse à la souris, approches, annuler/rétablir, menu Édition, panneau Aperçu | Dessiner un « A » et un « a » | Fait (fusionné dans `main`) |
+| 2 bis | Famille d'outils Plume (Plume de courbure, Ajout, Suppression, Conversion de point) | Tracer un « O » en 4 clics, convertir un angle en courbe | Fait (en attente de validation) |
 | 3 | Export `.otf`, import et modification d'une police existante, accents composés, réglages globaux | Relire le `.otf` exporté ; l'installer | À faire |
 | 4 | Studio 1 : moteur de mise en page, Caractère, Paragraphe, sélecteur de couleur | Vitest : approche, crénage, justification, retraits | À faire |
 | 5 | Studio 2 : texte sur tracé, effets, conversion en contours, exports SVG/PNG | Le SVG ne contient que des `<path>` | À faire |
@@ -123,3 +129,5 @@ src/
 - **2026-11-07** : étape 1 bis validée par Franck et fusionnée dans `main`. Début de l'étape 2 (éditeur de glyphe), détail en section 3 bis.
 - **2026-11-07** : étape 2 livrée sur la branche `etape-2-editeur` : Plume (angles et courbes, sens des contreformes automatique), Pinceau (perfect-freehand), Sélection (points, poignées alignées, cadre, flèches, suppression), chasse à la souris, approches, annuler/rétablir, menu Édition (dont « Inverser le sens du contour »), panneau Aperçu. Correctif : la police active est retrouvée au rechargement même si un panneau avait le focus.
 - **2026-11-07** : étape 2 validée par Franck (démo en ligne) et fusionnée dans `main`, pour que GitHub et le PC de Franck aient la même version que la démo.
+- **2026-11-07** : retour de Franck : la Plume manquait de ses propriétés et de la conversion de point. Ajout de l'étape 2 bis (famille d'outils Plume comme dans Photoshop + Conversion de point).
+- **2026-11-07** : étape 2 bis livrée sur la branche `etape-2bis-plume` : bouton Plume groupé (clic long ou clic droit), Plume de courbure, Ajout et Suppression de point d'ancrage (+ et −), Conversion de point, Maj+P pour passer d'un outil à l'autre.

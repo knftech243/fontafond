@@ -139,3 +139,81 @@ describe('Historique', () => {
     expect(h.past).toHaveLength(100)
   })
 })
+
+import { convertToCorner, curvatureNodes, ensureHandles, evalSegment, hitSegment, isSmoothPoint, splitSegmentAt, toSegs } from './geometry'
+
+describe('Famille Plume', () => {
+  const cubic: Contour = {
+    points: [
+      { x: 0, y: 0, type: 'on' },
+      { x: 0, y: 100, type: 'off' },
+      { x: 100, y: 200, type: 'off' },
+      { x: 200, y: 200, type: 'on' },
+      { x: 200, y: 0, type: 'on' },
+    ],
+  }
+
+  it('ajoute un point sur un segment sans déformer la courbe', () => {
+    const before = evalSegment({ x: 0, y: 0 }, [{ x: 0, y: 100 }, { x: 100, y: 200 }], { x: 200, y: 200 }, 0.5)
+    const { contour, inserted } = splitSegmentAt(cubic, 0, 0.5)
+    expect(contour.points[inserted]).toMatchObject({ x: Math.round(before.x), y: Math.round(before.y), type: 'on' })
+    expect(toSegs(contour).anchors).toHaveLength(4)
+    // la première moitié repasse par le même point au quart de la courbe d'origine
+    const q = evalSegment({ x: 0, y: 0 }, [{ x: 0, y: 100 }, { x: 100, y: 200 }], { x: 200, y: 200 }, 0.25)
+    const s = toSegs(contour)
+    const half = evalSegment(s.anchors[0], s.segs[0], s.anchors[1], 0.5)
+    expect(Math.abs(half.x - q.x)).toBeLessThan(1.5)
+    expect(Math.abs(half.y - q.y)).toBeLessThan(1.5)
+  })
+
+  it('ajoute un point au milieu d’une droite', () => {
+    const { contour, inserted } = splitSegmentAt(cubic, 1, 0.5)
+    expect(contour.points[inserted]).toMatchObject({ x: 200, y: 100 })
+  })
+
+  it('trouve le segment cliqué', () => {
+    const hit = hitSegment([cubic], { x: 203, y: 100 }, 10)
+    expect(hit).toMatchObject({ c: 0, seg: 1 })
+    expect(hit!.t).toBeCloseTo(0.5, 1)
+    expect(hitSegment([cubic], { x: 120, y: 60 }, 10)).toBeNull()
+  })
+
+  it('convertit un point lisse en angle, puis lui redonne des poignées', () => {
+    const smooth: Contour = {
+      points: [
+        { x: 0, y: 0, type: 'on' },
+        { x: 100, y: -50, type: 'off' },
+        { x: 150, y: 0, type: 'off' },
+        { x: 200, y: 100, type: 'on' },
+        { x: 250, y: 200, type: 'off' },
+        { x: 100, y: 250, type: 'off' },
+        { x: 0, y: 200, type: 'on' },
+      ],
+    }
+    expect(isSmoothPoint(smooth, 3)).toBe(true)
+    const corner = convertToCorner(smooth, 3)
+    const ci = corner.points.findIndex((p) => p.type === 'on' && p.x === 200 && p.y === 100)
+    expect(isSmoothPoint(corner, ci)).toBe(false)
+    const back = ensureHandles(corner, ci)!
+    expect(back.contour.points[back.inIdx].type).toBe('off')
+    expect(back.contour.points[back.outIdx].type).toBe('off')
+    expect(back.contour.points[back.anchorIdx]).toMatchObject({ x: 200, y: 100, type: 'on' })
+  })
+
+  it('donne des poignées à un angle relié par des droites', () => {
+    const sq: Contour = { points: [{ x: 0, y: 0, type: 'on' }, { x: 100, y: 0, type: 'on' }, { x: 100, y: 100, type: 'on' }] }
+    const r = ensureHandles(sq, 1)!
+    expect(r.contour.points.filter((p) => p.type === 'off')).toHaveLength(4)
+    expect(r.contour.points[r.anchorIdx]).toMatchObject({ x: 100, y: 0 })
+  })
+
+  it('Plume de courbure : poignées alignées et proportionnées, angles sans poignée', () => {
+    const nodes = curvatureNodes([{ x: 0, y: 0 }, { x: 100, y: 100 }, { x: 200, y: 0, corner: true }], false)
+    expect(nodes[0].in).toBeUndefined()
+    expect(nodes[1].in && nodes[1].out).toBeTruthy()
+    expect(nodes[1].in!.y).toBeCloseTo(nodes[1].out!.y)
+    expect(nodes[2].in).toBeUndefined()
+    const closed = curvatureNodes([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }], true)
+    expect(closed.every((p) => p.in && p.out)).toBe(true)
+  })
+})

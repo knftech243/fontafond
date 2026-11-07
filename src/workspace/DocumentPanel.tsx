@@ -4,13 +4,12 @@ import { EditorLayer } from '../editor/EditorLayer'
 import { GlyphView } from '../editor/GlyphView'
 import { useGlyphEditor } from '../editor/useGlyphEditor'
 import { createEmptyGlyph } from '../model/project'
-import { FIT_VIEW, useWorkspace, zoomAt } from './workspaceContext'
+import { FIT_VIEW, isDrawTool, useWorkspace, zoomAt } from './workspaceContext'
 
 const isTyping = (t: EventTarget | null) =>
   t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))
 
 const PAD = 160
-const DRAW_TOOLS = new Set(['pen', 'brush', 'select'])
 
 /** Fenêtre de document : la lettre en cours sur le plan de travail, avec outils de dessin, zoom et déplacement. */
 export function DocumentPanel(props: IDockviewPanelProps<{ projectId: string }>) {
@@ -81,7 +80,7 @@ export function DocumentPanel(props: IDockviewPanelProps<{ projectId: string }>)
   const baseW = Math.max(120, Math.min(size.w * 0.9, size.h * 0.9 * aspect))
   const pxPerUnit = (baseW * view.zoom) / vbW
   const panMode = ws.tool === 'hand' || space
-  const editing = !!project && DRAW_TOOLS.has(ws.tool) && !space
+  const editing = !!project && isDrawTool(ws.tool) && !space
 
   const editor = useGlyphEditor({ projectId, char, glyph, svgRef, pxPerUnit, enabled: editing })
 

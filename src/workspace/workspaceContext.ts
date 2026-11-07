@@ -2,7 +2,13 @@ import type { DockviewApi } from 'dockview-react'
 import { createContext, useContext } from 'react'
 import type { FontProject, Glyph } from '../model/types'
 
-export type Tool = 'pen' | 'brush' | 'select' | 'hand' | 'zoom'
+export type Tool = 'pen' | 'curvature' | 'addPoint' | 'deletePoint' | 'convert' | 'brush' | 'select' | 'hand' | 'zoom'
+
+/** Famille d'outils Plume (un seul bouton dans la barre d'outils, comme dans Photoshop). */
+export const PEN_TOOLS: Tool[] = ['pen', 'curvature', 'addPoint', 'deletePoint', 'convert']
+export const isPenTool = (t: Tool) => PEN_TOOLS.includes(t)
+/** Outils qui dessinent ou modifient le glyphe sur le plan de travail. */
+export const isDrawTool = (t: Tool) => isPenTool(t) || t === 'brush' || t === 'select'
 export type SaveState = 'saved' | 'saving' | 'error'
 
 /** Vue d'un document : zoom (1 = ajusté à la fenêtre) et décalage en pixels. */

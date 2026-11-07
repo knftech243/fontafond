@@ -1,5 +1,5 @@
 /**
- * Logique des outils Plume, Pinceau et Sélection sur le plan de travail.
+ * Logique des outils de la famille Plume, du Pinceau et de la Sélection sur le plan de travail.
  * Les gestes sont calculés depuis l'état de départ (glissers absolus) puis mémorisés
  * dans l'historique en une seule étape au relâchement.
  */
@@ -8,6 +8,13 @@ import type { Glyph } from '../model/types'
 import { useWorkspace } from '../workspace/workspaceContext'
 import {
   brushToContour,
+  convertToCorner,
+  curvatureNodes,
+  ensureHandles,
+  hitSegment,
+  isSmoothPoint,
+  splitSegmentAt,
+  type CurvNode,
   deletePoints,
   dist,
   hitContour,
@@ -35,7 +42,7 @@ interface Args {
   enabled: boolean
 }
 
-type DragKind = 'points' | 'handle' | 'advance' | 'pen-handle' | 'marquee' | 'brush'
+type DragKind = 'points' | 'handle' | 'handle-free' | 'advance' | 'pen-handle' | 'marquee' | 'brush' | 'convert'
 
 interface Drag {
   kind: DragKind
@@ -48,6 +55,9 @@ interface Drag {
   /** Position écran et échelle au départ (la vue se recadre quand la chasse change). */
   clientX?: number
   ppu?: number
+  /** Conversion de point : contour et indice du point d'ancrage cliqué. */
+  contourIndex?: number
+  pointIndex?: number
 }
 
 export interface EditorRenderState {
@@ -55,6 +65,13 @@ export interface EditorRenderState {
   hover: Vec | null
   brush: BrushSample[] | null
   marquee: { a: Vec; b: Vec } | null
+  /** Plume de courbure : tracé calculé (avec le point sous la souris) et points posés. */
+  curv: PenNode[] | null
+  curvNodes: CurvNode[] | null
+  /** Ajout de point : endroit où le point serait inséré. */
+  hoverSeg: Vec | null
+  /** Suppression / Conversion : point survolé. */
+  hoverKey: string | null
 }
 
 export function useGlyphEditor({ projectId, char, glyph, svgRef, pxPerUnit, enabled }: Args) {
@@ -66,8 +83,12 @@ export function useGlyphEditor({ projectId, char, glyph, svgRef, pxPerUnit, enab
   const [marquee, setMarquee] = useState<{ a: Vec; b: Vec } | null>(null)
   const drag = useRef<Drag | null>(null)
 
+  const [curvState, setCurvState] = useState<{ char: string; nodes: CurvNode[] } | null>(null)
+
   const draft = draftState && draftState.char === char && tool === 'pen' ? draftState.nodes : null
   const setDraft = (nodes: PenNode[] | null) => setDraftState(nodes ? { char, nodes } : null)
+  const curv = curvState && curvState.char === char && tool === 'curvature' ? curvState.nodes : null
+  const setCurv = (nodes: CurvNode[] | null) => setCurvState(nodes ? { char, nodes } : null)
   const px = (n: number) => n / pxPerUnit
 
   const toFont = (e: { clientX: number; clientY: number }): Vec => {
@@ -88,6 +109,14 @@ export function useGlyphEditor({ projectId, char, glyph, svgRef, pxPerUnit, enab
     setDraft(null)
   }
 
+  function commitCurv(nodes: CurvNode[]) {
+    if (nodes.length >= 3) {
+      const contour = orientNewContour(glyph.contours, nodesToContour(curvatureNodes(nodes, true)))
+      ws.editGlyph(projectId, char, (g) => ({ ...g, contours: [...g.contours, contour] }))
+    }
+    setCurv(null)
+  }
+
   const selection = ws.selection(projectId)
 
   function onPointerDown(e: RPointerEvent<HTMLElement>): boolean {
@@ -104,6 +133,54 @@ export function useGlyphEditor({ projectId, char, glyph, svgRef, pxPerUnit, enab
       const p = snap(pos)
       setDraft([...nodes, { x: p.x, y: p.y }])
       drag.current = { kind: 'pen-handle', start: p, before: glyph, keys: [], moved: false }
+      return true
+    }
+
+    if (tool === 'curvature') {
+      const nodes = curv ?? []
+      if (nodes.length >= 3 && dist(pos, nodes[0]) <= px(10)) {
+        commitCurv(nodes)
+        return true
+      }
+      const near = nodes.findIndex((nd) => dist(pos, nd) <= px(8))
+      if (near >= 0) {
+        // Double-clic sur un point posé : angle ↔ lisse.
+        if (e.detail >= 2) setCurv(nodes.map((nd, i) => (i === near ? { ...nd, corner: !nd.corner } : nd)))
+        return true
+      }
+      const p = snap(pos)
+      setCurv([...nodes, { x: p.x, y: p.y }])
+      return true
+    }
+
+    if (tool === 'addPoint') {
+      const hit = hitSegment(glyph.contours, pos, px(8))
+      if (hit) {
+        const { contour, inserted } = splitSegmentAt(glyph.contours[hit.c], hit.seg, hit.t)
+        ws.editGlyph(projectId, char, (g) => ({ ...g, contours: g.contours.map((c, i) => (i === hit.c ? contour : c)) }))
+        ws.setSelection(projectId, [pointKey(hit.c, inserted)])
+      }
+      return true
+    }
+
+    if (tool === 'deletePoint') {
+      const key = hitPoint(glyph.contours, pos, px(8), false)
+      if (key) {
+        ws.editGlyph(projectId, char, (g) => ({ ...g, contours: deletePoints(g.contours, [key]) }))
+        ws.setSelection(projectId, [])
+      }
+      return true
+    }
+
+    if (tool === 'convert') {
+      const key = hitPoint(glyph.contours, pos, px(8), opt.showHandles)
+      if (!key) return true
+      const [c, p] = parseKey(key)
+      if (glyph.contours[c].points[p].type === 'off') {
+        drag.current = { kind: 'handle-free', key, start: pos, before: glyph, keys: [], moved: false }
+      } else {
+        drag.current = { kind: 'convert', start: pos, before: glyph, keys: [], moved: false, contourIndex: c, pointIndex: p }
+      }
       return true
     }
 
@@ -163,6 +240,26 @@ export function useGlyphEditor({ projectId, char, glyph, svgRef, pxPerUnit, enab
         d.moved = true
         return
       }
+      case 'handle-free':
+        if (!d.key) return
+        d.moved = true
+        ws.editGlyph(projectId, char, () => ({ ...d.before, contours: moveHandle(d.before.contours, d.key!, snap(pos), true) }), false)
+        return
+      case 'convert': {
+        if (d.contourIndex === undefined || d.pointIndex === undefined) return
+        if (!d.moved && dist(pos, d.start) < px(4)) return
+        const ci = d.contourIndex
+        const r = ensureHandles(d.before.contours[ci], d.pointIndex)
+        if (!r) return
+        d.moved = true
+        const anchor = r.contour.points[r.anchorIdx]
+        const out = snap(pos)
+        const points = r.contour.points.map((pt, i) =>
+          i === r.outIdx ? { ...pt, x: out.x, y: out.y } : i === r.inIdx ? { ...pt, x: 2 * anchor.x - out.x, y: 2 * anchor.y - out.y } : pt,
+        )
+        ws.editGlyph(projectId, char, () => ({ ...d.before, contours: d.before.contours.map((ct, i) => (i === ci ? { points } : ct)) }), false)
+        return
+      }
       case 'brush':
         setBrush((b) => (b ? [...b, { x: pos.x, y: pos.y, pressure: e.pressure || 0.5 }] : b))
         d.moved = true
@@ -209,12 +306,37 @@ export function useGlyphEditor({ projectId, char, glyph, svgRef, pxPerUnit, enab
       setMarquee(null)
       return
     }
+    if (d.kind === 'convert' && !d.moved && d.contourIndex !== undefined && d.pointIndex !== undefined) {
+      // Simple clic : un point lisse devient un angle.
+      const ci = d.contourIndex
+      if (isSmoothPoint(d.before.contours[ci], d.pointIndex)) {
+        const corner = convertToCorner(d.before.contours[ci], d.pointIndex)
+        ws.editGlyph(projectId, char, (g) => ({ ...g, contours: g.contours.map((ct, i) => (i === ci ? corner : ct)) }))
+        ws.setSelection(projectId, [])
+      }
+      return
+    }
+    if ((d.kind === 'convert' || d.kind === 'handle-free') && d.moved) {
+      ws.recordHistory(projectId, char, d.before)
+      return
+    }
     if ((d.kind === 'points' || d.kind === 'handle' || d.kind === 'advance') && d.moved) ws.recordHistory(projectId, char, d.before)
   }
 
   /** Raccourcis propres au document actif ; renvoie vrai si la touche a été utilisée. */
   function onKeyDown(e: KeyboardEvent | RKeyboardEvent): boolean {
     if (!enabled) return false
+    if (tool === 'curvature' && curv) {
+      if (e.key === 'Escape' || e.key === 'Enter') {
+        commitCurv(curv)
+        return true
+      }
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        setCurv(curv.length > 1 ? curv.slice(0, -1) : null)
+        return true
+      }
+      return false
+    }
     if (tool === 'pen' && draft) {
       if (e.key === 'Escape' || e.key === 'Enter') {
         commitDraft(draft)
@@ -250,10 +372,25 @@ export function useGlyphEditor({ projectId, char, glyph, svgRef, pxPerUnit, enab
   let cursor = 'default'
   if (enabled) {
     if (tool === 'pen') cursor = draft && hover && draft.length >= 3 && dist(hover, draft[0]) <= px(10) ? 'cell' : 'crosshair'
+    else if (tool === 'curvature') cursor = curv && hover && curv.length >= 3 && dist(hover, curv[0]) <= px(10) ? 'cell' : 'crosshair'
+    else if (tool === 'addPoint' || tool === 'deletePoint' || tool === 'convert') cursor = 'pointer'
     else if (tool === 'brush') cursor = 'crosshair'
     else if (tool === 'select' && hover && Math.abs(hover.x - glyph.advanceWidth) <= px(8)) cursor = 'ew-resize'
   }
 
-  const render: EditorRenderState = { draft, hover, brush, marquee }
-  return { onPointerDown, onPointerMove, onPointerUp, onKeyDown, cursor, render, hasDraft: !!draft }
+  // Aperçus au survol (calculés seulement pour l'outil concerné).
+  const hoverSeg = enabled && tool === 'addPoint' && hover ? (hitSegment(glyph.contours, hover, px(8))?.point ?? null) : null
+  const hoverKey =
+    enabled && hover && (tool === 'deletePoint' || tool === 'convert')
+      ? hitPoint(glyph.contours, hover, px(8), tool === 'convert' && opt.showHandles)
+      : null
+  const curvPreview = curv
+    ? curvatureNodes(
+        hover && !(curv.length >= 3 && dist(hover, curv[0]) <= px(10)) ? [...curv, { x: hover.x, y: hover.y }] : curv,
+        false,
+      )
+    : null
+
+  const render: EditorRenderState = { draft, hover, brush, marquee, curv: curvPreview, curvNodes: curv, hoverSeg, hoverKey }
+  return { onPointerDown, onPointerMove, onPointerUp, onKeyDown, cursor, render, hasDraft: !!draft || !!curv }
 }

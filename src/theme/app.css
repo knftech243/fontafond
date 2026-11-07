@@ -1021,7 +1021,7 @@
     height: 50px;
     border-right: 0;
     border-bottom: 1px solid var(--fd-border);
-    overflow-x: auto;
+    overflow: visible;
   }
 
   .fd-status > :not(:last-child) {
@@ -1070,4 +1070,74 @@
 
 .fd-field input:disabled {
   opacity: 0.55;
+}
+
+/* ---------- Groupe d'outils (menu volant) ---------- */
+.fd-toolgroup {
+  position: relative;
+}
+
+.fd-tool-group {
+  position: relative;
+}
+
+.fd-tool-group::after {
+  content: '';
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  border-left: 5px solid transparent;
+  border-bottom: 5px solid currentColor;
+  opacity: 0.7;
+}
+
+.fd-flyout {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 8px);
+  z-index: 1000;
+  min-width: 270px;
+  padding: 5px;
+  background: var(--fd-menu-bg);
+  border: 1px solid var(--fd-border-strong);
+  border-radius: 10px;
+  box-shadow: var(--fd-shadow);
+}
+
+.fd-flyout-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px 7px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fd-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.fd-flyout-item:hover,
+.fd-flyout-item:focus-visible {
+  background: var(--fd-blue-strong);
+  color: #fff;
+  outline: none;
+}
+
+.fd-flyout-check {
+  width: 14px;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.fd-flyout-label {
+  flex: 1;
+}
+
+@media (max-width: 860px) {
+  .fd-flyout {
+    top: calc(100% + 6px);
+    left: 0;
+  }
 }

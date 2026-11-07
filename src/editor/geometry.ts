@@ -337,3 +337,246 @@ export function pointsInRect(contours: Contour[], a: Vec, b: Vec): string[] {
 export function contoursOf(keys: Iterable<string>): number[] {
   return [...new Set([...keys].map((k) => parseKey(k)[0]))].sort((x, y) => x - y)
 }
+
+// ---------------------------------------------------------------------------
+// Segments : un contour vu comme une suite de points d'ancrage reliés par des segments
+// (0 poignée = droite, 1 = quadratique, 2 = cubique).
+// ---------------------------------------------------------------------------
+
+export interface Segs {
+  anchors: Point[]
+  /** segs[k] relie anchors[k] à anchors[k + 1] (en bouclant). */
+  segs: Vec[][]
+  /** Indice d'origine (dans contour.points) de chaque point d'ancrage. */
+  onIdx: number[]
+}
+
+export function toSegs(contour: Contour): Segs {
+  const pts = contour.points
+  const n = pts.length
+  const start = pts.findIndex((p) => p.type === 'on')
+  const anchors: Point[] = []
+  const segs: Vec[][] = []
+  const onIdx: number[] = []
+  if (start < 0) return { anchors, segs, onIdx }
+  for (let k = 0; k < n; k++) {
+    const i = (start + k) % n
+    const p = pts[i]
+    if (p.type === 'on') {
+      anchors.push(p)
+      onIdx.push(i)
+      segs.push([])
+    } else segs[segs.length - 1].push({ x: p.x, y: p.y })
+  }
+  return { anchors, segs, onIdx }
+}
+
+/** Reconstruit un contour ; renvoie aussi la position de chaque point d'ancrage dans le résultat. */
+export function fromSegs(anchors: Point[], segs: Vec[][]): { contour: Contour; anchorAt: number[] } {
+  const points: Point[] = []
+  const anchorAt: number[] = []
+  anchors.forEach((a, k) => {
+    anchorAt.push(points.length)
+    points.push({ x: round(a.x), y: round(a.y), type: 'on' })
+    for (const o of segs[k] ?? []) points.push({ x: round(o.x), y: round(o.y), type: 'off' })
+  })
+  return { contour: { points }, anchorAt }
+}
+
+const lerp = (a: Vec, b: Vec, t: number): Vec => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t })
+
+/** Point d'un segment au paramètre t (0 à 1). */
+export function evalSegment(a: Vec, offs: Vec[], b: Vec, t: number): Vec {
+  if (offs.length === 0) return lerp(a, b, t)
+  if (offs.length === 1) return lerp(lerp(a, offs[0], t), lerp(offs[0], b, t), t)
+  const c1 = offs[0]
+  const c2 = offs[offs.length - 1]
+  const p01 = lerp(a, c1, t)
+  const p12 = lerp(c1, c2, t)
+  const p23 = lerp(c2, b, t)
+  return lerp(lerp(p01, p12, t), lerp(p12, p23, t), t)
+}
+
+const distToSegment = (p: Vec, a: Vec, b: Vec): { d: number; u: number } => {
+  const vx = b.x - a.x
+  const vy = b.y - a.y
+  const len2 = vx * vx + vy * vy
+  const u = len2 ? Math.max(0, Math.min(1, ((p.x - a.x) * vx + (p.y - a.y) * vy) / len2)) : 0
+  return { d: Math.hypot(p.x - (a.x + u * vx), p.y - (a.y + u * vy)), u }
+}
+
+export interface SegmentHit {
+  c: number
+  seg: number
+  t: number
+  point: Vec
+}
+
+/** Segment le plus proche d'un point (dans un rayon donné), avec la position t sur ce segment. */
+export function hitSegment(contours: Contour[], at: Vec, radius: number, steps = 32): SegmentHit | null {
+  let best: SegmentHit | null = null
+  let bestD = radius
+  contours.forEach((contour, c) => {
+    const { anchors, segs } = toSegs(contour)
+    anchors.forEach((a, k) => {
+      const b = anchors[(k + 1) % anchors.length]
+      let prev: Vec = a
+      for (let i = 1; i <= steps; i++) {
+        const cur = evalSegment(a, segs[k], b, i / steps)
+        const { d, u } = distToSegment(at, prev, cur)
+        if (d <= bestD) {
+          bestD = d
+          const t = (i - 1 + u) / steps
+          best = { c, seg: k, t, point: evalSegment(a, segs[k], b, t) }
+        }
+        prev = cur
+      }
+    })
+  })
+  return best
+}
+
+/** Insère un point d'ancrage au paramètre t d'un segment, sans changer la forme (De Casteljau). */
+export function splitSegmentAt(contour: Contour, seg: number, t: number): { contour: Contour; inserted: number } {
+  const { anchors, segs } = toSegs(contour)
+  const a = anchors[seg]
+  const b = anchors[(seg + 1) % anchors.length]
+  const offs = segs[seg]
+  let first: Vec[]
+  let second: Vec[]
+  let m: Vec
+  if (offs.length === 0) {
+    m = lerp(a, b, t)
+    first = []
+    second = []
+  } else if (offs.length === 1) {
+    const q0 = lerp(a, offs[0], t)
+    const q1 = lerp(offs[0], b, t)
+    m = lerp(q0, q1, t)
+    first = [q0]
+    second = [q1]
+  } else {
+    const c1 = offs[0]
+    const c2 = offs[offs.length - 1]
+    const p01 = lerp(a, c1, t)
+    const p12 = lerp(c1, c2, t)
+    const p23 = lerp(c2, b, t)
+    const p012 = lerp(p01, p12, t)
+    const p123 = lerp(p12, p23, t)
+    m = lerp(p012, p123, t)
+    first = [p01, p012]
+    second = [p123, p23]
+  }
+  const newAnchors = [...anchors.slice(0, seg + 1), { x: m.x, y: m.y, type: 'on' as const }, ...anchors.slice(seg + 1)]
+  const newSegs = [...segs.slice(0, seg), first, second, ...segs.slice(seg + 1)]
+  const { contour: out, anchorAt } = fromSegs(newAnchors, newSegs)
+  return { contour: out, inserted: anchorAt[seg + 1] }
+}
+
+const same = (a: Vec, b: Vec) => Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) < 0.5
+
+/** Retire les poignées inutiles (toutes rentrées sur leurs points) : le segment redevient une droite. */
+function cleanSegs(anchors: Point[], segs: Vec[][]): Vec[][] {
+  return segs.map((offs, k) => {
+    const a = anchors[k]
+    const b = anchors[(k + 1) % anchors.length]
+    return offs.every((o) => same(o, a) || same(o, b)) ? [] : offs
+  })
+}
+
+/** Indice du point d'ancrage correspondant à un indice de point d'origine. */
+const anchorOf = (s: Segs, pointIndex: number) => s.onIdx.indexOf(pointIndex)
+
+/** Point lisse → angle : ses poignées sont rentrées (comme l'outil Conversion de point). */
+export function convertToCorner(contour: Contour, pointIndex: number): Contour {
+  const s = toSegs(contour)
+  const k = anchorOf(s, pointIndex)
+  if (k < 0) return contour
+  const n = s.anchors.length
+  const segs = s.segs.map((o) => [...o])
+  const before = segs[(k - 1 + n) % n]
+  const after = segs[k]
+  const p = s.anchors[k]
+  if (before.length === 2) before[1] = { x: p.x, y: p.y }
+  else if (before.length === 1) before.length = 0
+  if (after.length === 2) after[0] = { x: p.x, y: p.y }
+  else if (after.length === 1) after.length = 0
+  return fromSegs(s.anchors, cleanSegs(s.anchors, segs)).contour
+}
+
+/** Vrai si le point d'ancrage a au moins une poignée non rentrée. */
+export function isSmoothPoint(contour: Contour, pointIndex: number): boolean {
+  const s = toSegs(contour)
+  const k = anchorOf(s, pointIndex)
+  if (k < 0) return false
+  const n = s.anchors.length
+  const p = s.anchors[k]
+  const before = s.segs[(k - 1 + n) % n]
+  const after = s.segs[k]
+  const inH = before.length ? before[before.length - 1] : null
+  const outH = after.length ? after[0] : null
+  return (!!inH && !same(inH, p)) || (!!outH && !same(outH, p))
+}
+
+/**
+ * Donne au point d'ancrage une poignée d'entrée et de sortie (segments convertis en cubiques
+ * si besoin, sans changer la forme) ; renvoie le contour et les indices des deux poignées.
+ */
+export function ensureHandles(contour: Contour, pointIndex: number): { contour: Contour; inIdx: number; outIdx: number; anchorIdx: number } | null {
+  const s = toSegs(contour)
+  const k = anchorOf(s, pointIndex)
+  if (k < 0) return null
+  const n = s.anchors.length
+  const toCubic = (j: number): Vec[] => {
+    const a = s.anchors[j]
+    const b = s.anchors[(j + 1) % n]
+    const offs = s.segs[j]
+    if (offs.length === 2) return [...offs]
+    if (offs.length === 1) {
+      const q = offs[0]
+      return [lerp(a, q, 2 / 3), lerp(b, q, 2 / 3)]
+    }
+    return [{ x: a.x, y: a.y }, { x: b.x, y: b.y }]
+  }
+  const segs = s.segs.map((o) => [...o])
+  const bi = (k - 1 + n) % n
+  segs[bi] = toCubic(bi)
+  segs[k] = toCubic(k)
+  const { contour: out, anchorAt } = fromSegs(s.anchors, segs)
+  const anchorIdx = anchorAt[k]
+  const len = out.points.length
+  return { contour: out, anchorIdx, inIdx: (anchorIdx - 1 + len) % len, outIdx: (anchorIdx + 1) % len }
+}
+
+/** Nœud de la Plume de courbure : un point par lequel la courbe passe ; `corner` = angle. */
+export interface CurvNode extends Vec {
+  corner?: boolean
+}
+
+/** Calcule les poignées pour que la courbe passe par tous les points (façon Catmull-Rom). */
+export function curvatureNodes(nodes: CurvNode[], closed: boolean): PenNode[] {
+  const n = nodes.length
+  if (n < 2) return nodes.map((p) => ({ x: p.x, y: p.y }))
+  return nodes.map((p, i) => {
+    const prev = i > 0 ? nodes[i - 1] : closed ? nodes[n - 1] : null
+    const next = i < n - 1 ? nodes[i + 1] : closed ? nodes[0] : null
+    if (p.corner || n === 2) return { x: p.x, y: p.y }
+    const a = prev ?? p
+    const b = next ?? p
+    const tx = b.x - a.x
+    const ty = b.y - a.y
+    const tl = Math.hypot(tx, ty) || 1
+    const ux = tx / tl
+    const uy = ty / tl
+    const node: PenNode = { x: p.x, y: p.y }
+    if (prev) {
+      const l = dist(prev, p) / 3
+      node.in = { x: p.x - ux * l, y: p.y - uy * l }
+    }
+    if (next) {
+      const l = dist(p, next) / 3
+      node.out = { x: p.x + ux * l, y: p.y + uy * l }
+    }
+    return node
+  })
+}

@@ -24,6 +24,7 @@ import { Dialog } from '../ui/Dialog'
 import { Icon, type IconName } from '../ui/Icon'
 import { MenuBar, type Menu, type MenuItem } from '../ui/MenuBar'
 import { ToolOptions } from '../editor/ToolOptions'
+import { ToolGroup, type GroupTool } from '../ui/ToolGroup'
 import { allKeys, contoursOf, deletePoints, reverseContour } from '../editor/geometry'
 import { downloadFile, safeFileName } from '../utils/download'
 import { DocumentPanel } from './DocumentPanel'
@@ -47,7 +48,7 @@ import {
 } from './layouts'
 import { GlyphPanel, GlyphsPanel, GroupActions, HomePanel, MetricsPanel, PreviewPanel, Watermark } from './panels'
 import { RESET_EVENT, documentPosition, isDocumentPanel, toolPosition } from './positions'
-import { FIT_VIEW, useWorkspace, zoomAt, type Tool } from './workspaceContext'
+import { FIT_VIEW, PEN_TOOLS, isPenTool, useWorkspace, zoomAt, type Tool } from './workspaceContext'
 
 const THEME: DockviewTheme = { ...themeDark, name: 'fontafond', className: `${themeDark.className} fd-dock` }
 
@@ -93,8 +94,15 @@ interface OpenDoc {
   params: Record<string, unknown> | undefined
 }
 
+const PEN_GROUP: GroupTool<Tool>[] = [
+  { id: 'pen', icon: 'pen', label: 'Plume', key: 'P' },
+  { id: 'curvature', icon: 'curvature', label: 'Plume de courbure', key: 'Maj P' },
+  { id: 'addPoint', icon: 'penAdd', label: 'Ajout de point d’ancrage', key: '+' },
+  { id: 'deletePoint', icon: 'penRemove', label: 'Suppression de point d’ancrage', key: '−' },
+  { id: 'convert', icon: 'convert', label: 'Conversion de point' },
+]
+
 const TOOLS: { id: Tool; icon: IconName; label: string; key: string; ready: boolean }[] = [
-  { id: 'pen', icon: 'pen', label: 'Plume', key: 'P', ready: true },
   { id: 'brush', icon: 'brush', label: 'Pinceau', key: 'B', ready: true },
   { id: 'select', icon: 'pointer', label: 'Sélection', key: 'V', ready: true },
   { id: 'hand', icon: 'hand', label: 'Main', key: 'H', ready: true },
@@ -244,6 +252,14 @@ export function Workspace() {
   const zoomBy = (f: number) => activeId && ws.setView(activeId, (v) => zoomAt(v, f))
   const fit = () => activeId && ws.setView(activeId, () => FIT_VIEW)
 
+  // Dernier outil de la famille Plume : affiché sur le bouton du groupe.
+  const [lastPen, setLastPen] = useState<Tool>('pen')
+  const chooseTool = (t: Tool) => {
+    if (isPenTool(t)) setLastPen(t)
+    ws.setTool(t)
+  }
+  const toolName = (PEN_GROUP.find((t) => t.id === ws.tool) ?? TOOLS.find((t) => t.id === ws.tool))?.label
+
   const glyphCharActive = activeId ? ws.selectedChar(activeId) : null
   const selection = activeId ? ws.selection(activeId) : []
   const currentGlyph = project && glyphCharActive ? project.glyphs[glyphCharActive] : undefined
@@ -295,10 +311,18 @@ export function Workspace() {
     } else if (mod && (e.key === 'a' || e.key === 'A')) {
       e.preventDefault()
       selectAll()
-    } else if (!mod && !e.altKey) {
-      const tools: Record<string, Tool> = { h: 'hand', z: 'zoom', p: 'pen', b: 'brush', v: 'select' }
+    } else if (!mod && !e.altKey && (e.key === 'p' || e.key === 'P')) {
+      // P : dernier outil Plume ; Maj+P : outil suivant de la famille Plume.
+      if (e.shiftKey) {
+        const i = PEN_TOOLS.indexOf(isPenTool(ws.tool) ? ws.tool : lastPen)
+        chooseTool(PEN_TOOLS[(i + 1) % PEN_TOOLS.length])
+      } else chooseTool(lastPen)
+    } else if (!mod && !e.altKey && (e.key === '+' || e.key === '=')) chooseTool('addPoint')
+    else if (!mod && !e.altKey && e.key === '-') chooseTool('deletePoint')
+    else if (!mod && !e.altKey) {
+      const tools: Record<string, Tool> = { h: 'hand', z: 'zoom', b: 'brush', v: 'select' }
       const t = tools[e.key.toLowerCase()]
-      if (t) ws.setTool(t)
+      if (t) chooseTool(t)
     }
     }
   })
@@ -456,7 +480,7 @@ export function Workspace() {
       }
       options={
         <>
-          <span className="fd-strong">{TOOLS.find((t) => t.id === ws.tool)?.label}</span>
+          <span className="fd-strong">{toolName}</span>
           <span className="fd-sep" aria-hidden="true" />
           {activeId ? (
             <ToolOptions
@@ -472,7 +496,9 @@ export function Workspace() {
           {activeId && <span className="fd-options-right">{Math.round(view.zoom * 100)} %</span>}
         </>
       }
-      tools={TOOLS.map((t) => (
+      tools={[
+        <ToolGroup key="pen-group" label="Plume" tools={PEN_GROUP} active={ws.tool} current={lastPen} onSelect={chooseTool} />,
+        ...TOOLS.map((t) => (
         <button
           key={t.id}
           type="button"
@@ -481,11 +507,12 @@ export function Workspace() {
           aria-pressed={ws.tool === t.id}
           aria-label={t.ready ? `${t.label} (${t.key})` : `${t.label} (${t.key}), bientôt disponible`}
           title={t.ready ? `${t.label} (${t.key})` : `${t.label} (${t.key}) – bientôt`}
-          onClick={() => ws.setTool(t.id)}
+          onClick={() => chooseTool(t.id)}
         >
           <Icon name={t.icon} size={20} />
         </button>
-      ))}
+      )),
+      ]}
       status={
         <>
           {project && glyphChar ? (
@@ -641,7 +668,10 @@ export function Workspace() {
         <table className="fd-table">
           <tbody>
             {[
-              ['P', 'Plume'],
+              ['P', 'Plume (dernier outil de la famille Plume)'],
+              ['Maj P', 'Outil suivant de la famille Plume'],
+              ['+  /  −', 'Ajout / Suppression de point d’ancrage'],
+              ['Clic long ou clic droit sur la Plume', 'Choisir un outil de la famille Plume'],
               ['B', 'Pinceau'],
               ['V', 'Sélection'],
               ['Ctrl Z  /  Ctrl Maj Z', 'Annuler / Rétablir'],

@@ -1,4 +1,4 @@
-import type { Tool, ToolOptions as Options } from '../workspace/workspaceContext'
+import { isPenTool, type Tool, type ToolOptions as Options } from '../workspace/workspaceContext'
 
 interface Props {
   tool: Tool
@@ -10,6 +10,10 @@ interface Props {
 
 const HINTS: Record<Tool, string> = {
   pen: 'Clic : point d’angle · clic-glisser : courbe · clic sur le point jaune ou Entrée : fermer · Retour arrière : annuler le dernier point.',
+  curvature: 'Cliquez pour poser des points : la courbe passe par eux · double-clic sur un point : angle ou lisse · point jaune ou Entrée : fermer.',
+  addPoint: 'Cliquez sur un contour pour y ajouter un point, sans changer la forme.',
+  deletePoint: 'Cliquez sur un point pour le supprimer avec ses poignées.',
+  convert: 'Clic sur un point lisse : angle · clic-glisser sur un angle : courbe · glisser une poignée : la déplacer seule.',
   brush: 'Dessinez à main levée : chaque trait devient une forme pleine.',
   select: 'Clic : point · Maj : ajouter · dans une forme : tout le contour · cadre : plusieurs points · flèches : déplacer · Alt : poignée libre.',
   hand: 'Glissez pour déplacer la vue. Molette : défiler ; Ctrl + molette : zoomer ; barre d’espace : Main temporaire.',
@@ -26,7 +30,7 @@ export function ToolOptions({ tool, options, onChange, hasSelection, onDeleteSel
   )
   return (
     <>
-      {(tool === 'pen' || tool === 'select') && (
+      {(isPenTool(tool) || tool === 'select') && (
         <>
           {check('snap', 'Aimanter à la grille')}
           {check('showHandles', 'Afficher les poignées')}
@@ -60,7 +64,7 @@ export function ToolOptions({ tool, options, onChange, hasSelection, onDeleteSel
           {check('pressure', 'Pression du stylet')}
         </>
       )}
-      {(tool === 'pen' || tool === 'brush' || tool === 'select') && check('template', 'Lettre modèle')}
+      {(isPenTool(tool) || tool === 'brush' || tool === 'select') && check('template', 'Lettre modèle')}
       {tool === 'select' && (
         <button type="button" className="fd-btn fd-btn-sm" disabled={!hasSelection} onClick={onDeleteSelection}>
           Supprimer la sélection

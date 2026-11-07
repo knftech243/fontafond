@@ -4,7 +4,8 @@ Créez et modifiez vos polices dans le navigateur, puis utilisez-les avec un stu
 
 > Projet en cours de construction : voir [docs/PLAN.md](docs/PLAN.md) pour le périmètre et l'avancement des étapes.
 
-## Ce qui fonctionne déjà (étapes 1, 1 bis et 2)
+## Ce qui fonctionne déjà (étapes 1, 1 bis, 2 et 2 bis)
+- **Famille d'outils Plume** (clic long ou clic droit sur la Plume) : Plume, Plume de courbure, Ajout de point (+), Suppression de point (−), Conversion de point (angle ↔ courbe) ; Maj+P pour passer de l'un à l'autre.
 - **Dessin des lettres** : Plume (P, angles et courbes), Pinceau (B, main levée, souris, doigt ou stylet), Sélection (V, points, poignées, cadre, flèches, Suppr), chasse à la souris, approches gauche et droite, lettre modèle à décalquer, aimantation à la grille.
 - **Annuler / Rétablir** (Ctrl+Z, Ctrl+Maj+Z) et menu **Édition**.
 - Panneau **Aperçu** : un mot test écrit avec vos lettres, en direct.

@@ -1,7 +1,7 @@
 import { contoursToPathData } from '../font/path'
 import type { Glyph } from '../model/types'
-import type { Tool, ToolOptions } from '../workspace/workspaceContext'
-import { brushOutline, dist, pointKey, type PenNode, type Vec } from './geometry'
+import { isPenTool, type Tool, type ToolOptions } from '../workspace/workspaceContext'
+import { brushOutline, dist, parseKey, pointKey, type PenNode, type Vec } from './geometry'
 import type { EditorRenderState } from './useGlyphEditor'
 
 interface Props {
@@ -35,8 +35,12 @@ function draftPath(nodes: PenNode[]): string {
 export function EditorLayer({ glyph, tool, options, selection, pxPerUnit, state }: Props) {
   const u = 1 / pxPerUnit // une unité écran (1 px) en unités de police
   const sel = new Set(selection)
-  const showPoints = tool === 'select' || tool === 'pen'
-  const { draft, hover, brush, marquee } = state
+  const showPoints = tool === 'select' || isPenTool(tool)
+  const { draft, hover, brush, marquee, curv, curvNodes, hoverSeg, hoverKey } = state
+  const hovered = hoverKey ? (() => {
+    const [c, p] = parseKey(hoverKey)
+    return glyph.contours[c]?.points[p] ?? null
+  })() : null
 
   return (
     <g pointerEvents="none">
@@ -100,6 +104,39 @@ export function EditorLayer({ glyph, tool, options, selection, pxPerUnit, state 
             <circle cx={draft[0].x} cy={draft[0].y} r={9 * u} fill="none" stroke="#F7D618" strokeWidth={2.5 * u} />
           )}
         </g>
+      )}
+
+      {curv && curvNodes && (
+        <g>
+          <path d={draftPath(curv)} fill="none" stroke={BLUE} strokeWidth={2 * u} strokeDasharray={`${6 * u} ${4 * u}`} />
+          {curvNodes.map((nd, i) =>
+            nd.corner ? (
+              <rect key={i} x={nd.x - 4 * u} y={nd.y - 4 * u} width={8 * u} height={8 * u} fill={i === 0 ? '#F7D618' : '#fff'} stroke={INK} strokeWidth={1.5 * u} />
+            ) : (
+              <circle key={i} cx={nd.x} cy={nd.y} r={4.5 * u} fill={i === 0 ? '#F7D618' : '#fff'} stroke={INK} strokeWidth={1.5 * u} />
+            ),
+          )}
+          {hover && curvNodes.length >= 3 && dist(hover, curvNodes[0]) <= 10 * u && (
+            <circle cx={curvNodes[0].x} cy={curvNodes[0].y} r={9 * u} fill="none" stroke="#F7D618" strokeWidth={2.5 * u} />
+          )}
+        </g>
+      )}
+
+      {hoverSeg && (
+        <g>
+          <circle cx={hoverSeg.x} cy={hoverSeg.y} r={6 * u} fill={BLUE} fillOpacity={0.25} stroke={BLUE} strokeWidth={1.5 * u} />
+          <path d={`M${hoverSeg.x - 3 * u} ${hoverSeg.y}H${hoverSeg.x + 3 * u}M${hoverSeg.x} ${hoverSeg.y - 3 * u}V${hoverSeg.y + 3 * u}`} stroke={BLUE} strokeWidth={1.5 * u} />
+        </g>
+      )}
+      {hovered && (
+        <circle
+          cx={hovered.x}
+          cy={hovered.y}
+          r={8 * u}
+          fill="none"
+          stroke={tool === 'deletePoint' ? '#CE1021' : '#F7D618'}
+          strokeWidth={2.5 * u}
+        />
       )}
 
       {tool === 'brush' && brush && brush.length > 1 && (
